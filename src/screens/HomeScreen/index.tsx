@@ -18,21 +18,23 @@ const HomeScreen: React.FC = () => {
   const [proximaClase, setProximaClase] = useState<NextClassInfo | null>(null);
   const [fechaActual, setFechaActual] = useState(new Date());
 
-  // Cargar datos al montar el componente
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        await Promise.all([fetchClases(), fetchReservas()]);
-      } catch (error) {
-        console.error('Error cargando datos:', error);
+      // Cargar datos al montar el componente
+    useEffect(() => {
+      const loadData = async () => {
+        try {
+          await Promise.all([fetchClases(), fetchReservas()]);
+        } catch (error) {
+          // Error silencioso para evitar logs en producción
+        }
+      };
+      
+      loadData();
+      
+      // Test the calculator logic (only in development)
+      if (__DEV__) {
+        testNextClassCalculator();
       }
-    };
-    
-    loadData();
-    
-    // Test the calculator logic
-    testNextClassCalculator();
-  }, [fetchClases, fetchReservas]);
+    }, [fetchClases, fetchReservas]);
 
   // Función para obtener el emoji según el tipo de clase
   const getEmojiByTipo = (tipo: string): string => {
@@ -87,20 +89,7 @@ const HomeScreen: React.FC = () => {
   // Calcular la próxima clase cuando cambien los datos
   useEffect(() => {
     if (state.clases && state.reservas) {
-      console.log('🔄 Calculando próxima clase...', {
-        clasesCount: state.clases.length,
-        reservasCount: state.reservas.length,
-        fechaActual: fechaActual.toISOString()
-      });
-      
       const proxima = calcularProximaClase(state.clases, state.reservas, fechaActual);
-      console.log('📅 Próxima clase calculada:', proxima ? {
-        nombre: proxima.clase.nombre,
-        fecha: proxima.fecha.toISOString(),
-        esHoy: proxima.esHoy,
-        esManana: proxima.esManana
-      } : 'No hay próxima clase');
-      
       setProximaClase(proxima);
     }
   }, [state.clases, state.reservas, fechaActual]);
@@ -115,23 +104,19 @@ const HomeScreen: React.FC = () => {
   }, []);
 
   const handleLogout = async () => {
-    console.log('🚪 Iniciando logout desde HomeScreen...');
     await logout();
     // Navegación explícita como respaldo
     setTimeout(() => {
-      console.log('🔄 Navegando a login...');
       router.replace('/login');
     }, 200);
   };
 
   // Manejadores para los iconos del header
   const handleBellPress = () => {
-    console.log('🔔 Notificaciones');
     // Aquí puedes navegar a las notificaciones
   };
 
   const handleSettingsPress = () => {
-    console.log('⚙️ Configuración');
     // Aquí puedes navegar a la configuración
   };
 

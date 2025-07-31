@@ -55,9 +55,7 @@ export default function RootLayout() {
   }, [isAuthenticated, isLoading, loaded]);
 
   // Log para verificar que ReservasProvider se monta
-  useEffect(() => {
-    console.log('🔧 RootLayout - ReservasProvider montado en Expo Router');
-  }, []);
+
 
   if (!loaded) {
     return null;

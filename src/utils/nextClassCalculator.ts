@@ -39,21 +39,12 @@ const formatDate = (date: Date): string => {
 
 // Función para calcular la próxima fecha de una clase
 const calcularProximaFechaClase = (clase: Clase, desdeFecha: Date = new Date()): Date | null => {
-  console.log('📅 Calculando próxima fecha para clase:', {
-    nombre: clase.nombre,
-    dias: clase.dias,
-    horario: clase.horario,
-    desdeFecha: desdeFecha.toISOString()
-  });
-  
   const diasClase = clase.dias.map(dia => {
     const diasMap: { [key: string]: number } = {
       'LUNES': 1, 'MARTES': 2, 'MIERCOLES': 3, 'JUEVES': 4, 'VIERNES': 5, 'SABADO': 6, 'DOMINGO': 0
     };
     return diasMap[dia];
   });
-
-  console.log('📅 Días de clase mapeados:', diasClase);
 
   if (diasClase.length === 0) return null;
 
@@ -89,12 +80,6 @@ export const calcularProximaClase = (
   misReservas: ReservaConClase[],
   desdeFecha: Date = new Date()
 ): NextClassInfo | null => {
-  console.log('🔍 Calculando próxima clase con:', {
-    clasesCount: clases.length,
-    reservasCount: misReservas.length,
-    desdeFecha: desdeFecha.toISOString()
-  });
-  
   if (clases.length === 0) return null;
 
   let proximaClase: NextClassInfo | null = null;
