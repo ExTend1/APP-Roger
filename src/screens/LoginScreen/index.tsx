@@ -3,17 +3,17 @@ import {
   View,
   StyleSheet,
   Dimensions,
-  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import {
   Text,
   TextInput,
   Button,
   Surface,
-  ActivityIndicator,
-  Snackbar,
   IconButton,
-  useTheme,
 } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import Animated, {
@@ -21,13 +21,11 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withDelay,
-  runOnJS,
+  withSequence,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { SvgXml } from 'react-native-svg';
+import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../contexts/authStore';
-import { authService, type LoginRequest } from '../../services/authService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -46,31 +44,35 @@ fill="#000000" stroke="none">
 </svg>
 `;
 
-interface LoginScreenProps {}
-
-const LoginScreen: React.FC<LoginScreenProps> = () => {
-  const theme = useTheme();
+const LoginScreen: React.FC = () => {
   const router = useRouter();
-  const { login, isLoading, error, clearError, isAuthenticated } = useAuthStore();
-
-  // Estados del formulario
+  const { login, isLoading, error, fieldErrors, clearError, clearFieldErrors } = useAuthStore();
+  
+  // Estado local del formulario
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [formErrors, setFormErrors] = useState<string[]>([]);
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-
+  
+  // Referencias para los inputs
+  const emailInputRef = React.useRef<any>(null);
+  const passwordInputRef = React.useRef<any>(null);
+  
   // Valores animados
   const logoScale = useSharedValue(0);
   const logoOpacity = useSharedValue(0);
   const formTranslateY = useSharedValue(50);
   const formOpacity = useSharedValue(0);
+  const errorOpacity = useSharedValue(0);
+  const errorScale = useSharedValue(0.8);
 
-  // Iniciar animaciones al montar el componente
+  // Iniciar animaciones
   useEffect(() => {
     const startAnimations = () => {
       // Animación del logo
-      logoScale.value = withSpring(1, { damping: 8 });
+      logoScale.value = withSequence(
+        withSpring(1.2, { damping: 8, stiffness: 100 }),
+        withSpring(1, { damping: 8, stiffness: 100 })
+      );
       logoOpacity.value = withSpring(1, { damping: 8 });
 
       // Animación del formulario con delay
@@ -81,21 +83,24 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
     startAnimations();
   }, []);
 
-  // Redirigir si ya está autenticado
+  // Animar error cuando aparece
   useEffect(() => {
-    console.log('🔍 LoginScreen - Estado auth:', { isAuthenticated, isLoading });
-    if (isAuthenticated && !isLoading) {
-      console.log('🔄 LoginScreen - Redirigiendo a tabs...');
-      router.replace('/(tabs)');
+    if (error || Object.keys(fieldErrors).length > 0) {
+      errorOpacity.value = withSpring(1, { damping: 8 });
+      errorScale.value = withSpring(1, { damping: 8 });
+    } else {
+      errorOpacity.value = withSpring(0, { damping: 8 });
+      errorScale.value = withSpring(0.8, { damping: 8 });
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [error, fieldErrors]);
 
-  // Mostrar errores en snackbar
+  // Limpiar errores cuando los campos están completamente vacíos
   useEffect(() => {
-    if (error) {
-      setSnackbarVisible(true);
+    if (!email.trim() && !password.trim()) {
+      clearError();
+      clearFieldErrors();
     }
-  }, [error]);
+  }, [email, password]);
 
   // Estilos animados
   const logoAnimatedStyle = useAnimatedStyle(() => ({
@@ -108,200 +113,196 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
     opacity: formOpacity.value,
   }));
 
-  // Validar formulario
-  const validateForm = (): boolean => {
-    const credentials = { email, password };
-    const validation = authService.validateCredentials(credentials);
+  const errorAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: errorOpacity.value,
+    transform: [{ scale: errorScale.value }],
+  }));
 
-    if (!validation.isValid) {
-      setFormErrors(validation.errors);
-      return false;
-    }
-
-    setFormErrors([]);
-    return true;
-  };
-
-  // Manejar login
-  const handleLogin = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      clearError();
-      const success = await login(email, password);
-
-      if (success) {
-        // El store manejará la redirección automáticamente
-        console.log('✅ Login exitoso, redirigiendo...');
-      }
-    } catch (error) {
-      console.error('❌ Error inesperado en login:', error);
-    }
-  };
-
-  // Manejar entrada de texto del email
+  // Manejadores de eventos
   const handleEmailChange = (text: string) => {
-    setEmail(text.toLowerCase().trim());
-    if (formErrors.length > 0) {
-      setFormErrors([]);
+    setEmail(text);
+    // Limpiar error de email si existe y el usuario está corrigiendo
+    if (fieldErrors.email) {
+      clearFieldErrors();
     }
   };
 
-  // Manejar entrada de texto de la contraseña
   const handlePasswordChange = (text: string) => {
     setPassword(text);
-    if (formErrors.length > 0) {
-      setFormErrors([]);
+    // Limpiar error de password si existe y el usuario está corrigiendo
+    if (fieldErrors.password) {
+      clearFieldErrors();
     }
   };
 
-  // Determinar si el botón debe estar habilitado
-  const isButtonDisabled = isLoading || !email.trim() || !password.trim();
+  const handleLogin = async () => {
+    const result = await login(email, password);
+    
+    if (result.success) {
+      router.replace('/(tabs)');
+    }
+  };
+
+  const handleTogglePassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  // Función para manejar el submit del email (Enter)
+  const handleEmailSubmit = () => {
+    passwordInputRef.current?.focus();
+  };
+
+  // Función para manejar el submit del password (Enter)
+  const handlePasswordSubmit = () => {
+    if (!isLoading) {
+      handleLogin();
+    }
+  };
+
+  // Determinar si hay errores en campos específicos
+  const hasEmailError = !!fieldErrors.email;
+  const hasPasswordError = !!fieldErrors.password;
+  const hasGeneralError = !!error;
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" backgroundColor="#1a1a1a" />
       
-             <View style={styles.contentContainer}>
-         {/* Logo animado */}
-         <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
-           {/* Logo circular amarillo con SVG */}
-           <View style={styles.logoCircle}>
-             <SvgXml xml={logoSvg} width={50} height={50} />
-           </View>
-           <Text style={styles.gymName}>
-             Bienvenido
-           </Text>
-           <Text style={styles.subtitle}>
-             Ingresa a tu cuenta del gimnasio
-           </Text>
-         </Animated.View>
-
-         {/* Formulario animado */}
-         <Animated.View style={[styles.formContainer, formAnimatedStyle]}>
-           <Surface style={styles.formSurface} elevation={2}>
-             {/* Campo de email */}
-             <View style={styles.inputContainer}>
-               <Text style={styles.inputLabel}>Email</Text>
-                                <TextInput
-                 value={email}
-                 onChangeText={handleEmailChange}
-                 mode="outlined"
-                 placeholder="tu@email.com"
-                 keyboardType="email-address"
-                 autoCapitalize="none"
-                 autoComplete="email"
-                 autoCorrect={false}
-                 style={styles.input}
-                 error={formErrors.some(err => err.includes('Email'))}
-                 disabled={isLoading}
-                 outlineColor="#FFFFFF"
-                 activeOutlineColor="#FFD700"
-                 textColor="#FFFFFF"
-                 placeholderTextColor="#CCCCCC"
-               />
-             </View>
-
-             {/* Campo de contraseña */}
-             <View style={styles.inputContainer}>
-               <Text style={styles.inputLabel}>Contraseña</Text>
-                                <TextInput
-                 value={password}
-                 onChangeText={handlePasswordChange}
-                 mode="outlined"
-                 placeholder="••••••••"
-                 secureTextEntry={!showPassword}
-                 autoCapitalize="none"
-                 autoComplete="password"
-                 autoCorrect={false}
-                 right={
-                   <TextInput.Icon
-                     icon={showPassword ? "eye-off" : "eye"}
-                     onPress={() => setShowPassword(!showPassword)}
-                   />
-                 }
-                 style={styles.input}
-                 error={formErrors.some(err => err.includes('contraseña'))}
-                 disabled={isLoading}
-                 outlineColor="#FFFFFF"
-                 activeOutlineColor="#FFD700"
-                 textColor="#FFFFFF"
-                 placeholderTextColor="#CCCCCC"
-               />
-             </View>
-
-             {/* Mostrar errores de validación */}
-             {formErrors.length > 0 && (
-               <View style={styles.errorContainer}>
-                 {formErrors.map((error, index) => (
-                   <Text key={index} style={styles.errorText}>
-                     • {error}
-                   </Text>
-                 ))}
-               </View>
-             )}
-
-             {/* Botón de login */}
-             <Button
-               mode="contained"
-               onPress={handleLogin}
-               disabled={isButtonDisabled}
-               loading={isLoading}
-               style={styles.loginButton}
-               contentStyle={styles.loginButtonContent}
-               labelStyle={styles.loginButtonLabel}
-               buttonColor="#FFD700"
-               textColor="#000000"
-             >
-               {isLoading ? 'Iniciando Sesión...' : 'Iniciar Sesión'}
-             </Button>
-
-             {/* Información de cuenta */}
-                            <View style={styles.infoContainer}>
-               <View style={styles.infoBox}>
-                 <IconButton
-                   icon="information"
-                   size={20}
-                   iconColor="#FFD700"
-                   style={styles.infoIcon}
-                 />
-                 <View style={styles.infoTextContainer}>
-                   <Text style={styles.infoTitle}>
-                     ¿No tienes cuenta?
-                   </Text>
-                   <Text style={styles.infoText}>
-                     Solicita tu cuenta en recepción para acceder a la app del gimnasio.
-                   </Text>
-                 </View>
-               </View>
-             </View>
-           </Surface>
-         </Animated.View>
-       </View>
-
-      {/* Snackbar para errores */}
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => {
-          setSnackbarVisible(false);
-          clearError();
-        }}
-        duration={4000}
-        style={{ backgroundColor: '#f44336' }}
-        action={{
-          label: 'Cerrar',
-          onPress: () => {
-            setSnackbarVisible(false);
-            clearError();
-          },
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
       >
-        <Text style={{ color: 'white' }}>
-          {error || 'Error desconocido'}
-        </Text>
-      </Snackbar>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Logo animado */}
+          <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
+            <View style={styles.logoCircle}>
+              <SvgXml xml={logoSvg} width={50} height={50} />
+            </View>
+            <Text style={styles.gymName}>
+              Bienvenido
+            </Text>
+            <Text style={styles.subtitle}>
+              Ingresa a tu cuenta del gimnasio
+            </Text>
+          </Animated.View>
+
+          {/* Mensaje de error general */}
+          {hasGeneralError && (
+            <Animated.View style={[styles.errorContainer, errorAnimatedStyle]}>
+              <Text style={styles.errorText}>{error}</Text>
+            </Animated.View>
+          )}
+
+          {/* Formulario animado */}
+          <Animated.View style={[styles.formContainer, formAnimatedStyle]}>
+            <Surface style={styles.formSurface}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Email</Text>
+                                 <TextInput
+                   ref={emailInputRef}
+                   value={email}
+                   onChangeText={handleEmailChange}
+                   mode="outlined"
+                   placeholder="tu@email.com"
+                   keyboardType="email-address"
+                   autoCapitalize="none"
+                   autoComplete="email"
+                   autoCorrect={false}
+                   returnKeyType="next"
+                   onSubmitEditing={handleEmailSubmit}
+                   blurOnSubmit={false}
+                   style={[
+                     styles.input,
+                     hasEmailError && styles.inputError
+                   ]}
+                   error={hasEmailError}
+                   disabled={isLoading}
+                   outlineColor={hasEmailError ? "#FF6B6B" : "#FFFFFF"}
+                   activeOutlineColor={hasEmailError ? "#FF6B6B" : "#FFD700"}
+                   textColor="#FFFFFF"
+                   placeholderTextColor="#CCCCCC"
+                 />
+                {hasEmailError && (
+                  <Text style={styles.fieldErrorText}>{fieldErrors.email}</Text>
+                )}
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Contraseña</Text>
+                                 <TextInput
+                   ref={passwordInputRef}
+                   value={password}
+                   onChangeText={handlePasswordChange}
+                   mode="outlined"
+                   placeholder="••••••••"
+                   secureTextEntry={!showPassword}
+                   autoCapitalize="none"
+                   autoComplete="password"
+                   autoCorrect={false}
+                   returnKeyType="done"
+                   onSubmitEditing={handlePasswordSubmit}
+                   blurOnSubmit={true}
+                   style={[
+                     styles.input,
+                     hasPasswordError && styles.inputError
+                   ]}
+                   error={hasPasswordError}
+                   disabled={isLoading}
+                   outlineColor={hasPasswordError ? "#FF6B6B" : "#FFFFFF"}
+                   activeOutlineColor={hasPasswordError ? "#FF6B6B" : "#FFD700"}
+                   textColor="#FFFFFF"
+                   placeholderTextColor="#CCCCCC"
+                   right={
+                     <TextInput.Icon
+                       icon={showPassword ? "eye-off" : "eye"}
+                       onPress={handleTogglePassword}
+                     />
+                   }
+                 />
+                {hasPasswordError && (
+                  <Text style={styles.fieldErrorText}>{fieldErrors.password}</Text>
+                )}
+              </View>
+
+              <Button
+                mode="contained"
+                onPress={handleLogin}
+                loading={isLoading}
+                disabled={isLoading}
+                style={styles.loginButton}
+                contentStyle={styles.loginButtonContent}
+                labelStyle={styles.loginButtonLabel}
+                buttonColor="#FFD700"
+                textColor="#000000"
+              >
+                {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              </Button>
+            </Surface>
+          </Animated.View>
+
+          {/* Información */}
+          <View style={styles.infoBox}>
+            <IconButton
+              icon="information"
+              size={20}
+              iconColor="#FFD700"
+              style={styles.infoIcon}
+            />
+            <View style={styles.infoTextContainer}>
+              <Text style={styles.infoTitle}>
+                ¿No tienes cuenta?
+              </Text>
+              <Text style={styles.infoText}>
+                Solicita tu cuenta en recepción para acceder a la app del gimnasio.
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -311,10 +312,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1a1a1a',
   },
-  contentContainer: {
+  keyboardAvoidingView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
+    paddingBottom: 40,
   },
   logoContainer: {
     alignItems: 'center',
@@ -327,7 +332,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFD700',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
     shadowColor: '#FFD700',
     shadowOffset: {
       width: 0,
@@ -348,10 +352,21 @@ const styles = StyleSheet.create({
     color: '#FFA500',
     textAlign: 'center',
   },
+  errorContainer: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
   formContainer: {
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
+    marginBottom: 20,
   },
   formSurface: {
     padding: 24,
@@ -370,37 +385,25 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: 'transparent',
   },
-  errorContainer: {
-    marginBottom: 16,
-    paddingHorizontal: 8,
+  inputError: {
+    borderColor: '#FF6B6B',
   },
-  errorText: {
-    fontSize: 14,
-    marginBottom: 4,
-    color: '#f44336',
+  fieldErrorText: {
+    color: '#FF6B6B',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
   loginButton: {
     marginTop: 8,
-    marginBottom: 24,
     borderRadius: 8,
-    shadowColor: '#FFD700',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
   loginButtonContent: {
-    paddingVertical: 8,
+    height: 48,
   },
   loginButtonLabel: {
     fontSize: 16,
-    fontWeight: '700',
-  },
-  infoContainer: {
-    marginTop: 16,
+    fontWeight: '600',
   },
   infoBox: {
     backgroundColor: '#2a2a2a',

@@ -10,6 +10,7 @@ export default {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
+      bundleIdentifier: "com.roger.gym",
       splash: {
         image: "./assets/images/splash-logo.svg",
         resizeMode: "contain",
@@ -17,6 +18,7 @@ export default {
       }
     },
     android: {
+      package: "com.roger.gym",
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#1a1a1a"

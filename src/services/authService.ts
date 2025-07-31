@@ -46,6 +46,18 @@ export type User = z.infer<typeof userSchema>;
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
 export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
 
+// Tipos de errores para manejo específico
+export interface ValidationError {
+  field: 'email' | 'password' | 'general';
+  message: string;
+}
+
+export interface ApiError {
+  type: 'validation' | 'auth' | 'server' | 'network' | 'unknown';
+  message: string;
+  field?: 'email' | 'password' | 'general';
+}
+
 // Configuración de Axios
 const createApiClient = (): AxiosInstance => {
   const client = axios.create({
@@ -92,6 +104,89 @@ const createApiClient = (): AxiosInstance => {
 // Instancia del cliente API
 const apiClient = createApiClient();
 
+// Función para extraer errores de validación de Zod
+const extractValidationErrors = (error: any): ValidationError[] => {
+  if (error.errors && Array.isArray(error.errors)) {
+    return error.errors.map((err: any) => {
+      const field = err.path?.[0] as 'email' | 'password';
+      return {
+        field: field || 'general',
+        message: err.message || 'Error de validación',
+      };
+    });
+  }
+  return [{ field: 'general', message: 'Error de validación' }];
+};
+
+// Función para manejar errores de la API
+const handleApiError = (error: any): ApiError => {
+  // Errores de validación Zod
+  if (error.name === 'ZodError' || error instanceof z.ZodError) {
+    const validationErrors = extractValidationErrors(error);
+    const firstError = validationErrors[0];
+    return {
+      type: 'validation',
+      message: firstError.message,
+      field: firstError.field,
+    };
+  }
+
+  // Errores de respuesta del servidor
+  if (error.response?.data) {
+    const { status, data } = error.response;
+    const errorMessage = data.error || 'Error del servidor';
+
+    switch (status) {
+      case 400:
+        return {
+          type: 'validation',
+          message: errorMessage,
+          field: 'general',
+        };
+      case 401:
+        return {
+          type: 'auth',
+          message: errorMessage,
+          field: 'general',
+        };
+      case 403:
+        return {
+          type: 'auth',
+          message: errorMessage,
+          field: 'general',
+        };
+      case 500:
+        return {
+          type: 'server',
+          message: errorMessage,
+          field: 'general',
+        };
+      default:
+        return {
+          type: 'server',
+          message: errorMessage,
+          field: 'general',
+        };
+    }
+  }
+
+  // Errores de red
+  if (error.code === 'ECONNREFUSED' || error.code === 'NETWORK_ERROR' || !error.response) {
+    return {
+      type: 'network',
+      message: 'No se pudo conectar al servidor. Verifica tu conexión.',
+      field: 'general',
+    };
+  }
+
+  // Errores desconocidos
+  return {
+    type: 'unknown',
+    message: error.message || 'Error desconocido',
+    field: 'general',
+  };
+};
+
 export const authService = {
   // Login
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
@@ -116,36 +211,22 @@ export const authService = {
     } catch (error: any) {
       console.error('❌ Error en login:', error);
       
-      // Manejar errores de validación de Zod
-      if (error.name === 'ZodError') {
+      // Si es un error de validación Zod, no usar handleApiError
+      if (error.name === 'ZodError' || error instanceof z.ZodError) {
+        const validationErrors = extractValidationErrors(error);
+        const firstError = validationErrors[0];
         return {
           success: false,
-          error: 'Datos de entrada inválidos',
+          error: firstError.message,
           data: null,
         };
       }
       
-      // Manejar errores de la API
-      if (error.response?.data) {
-        return {
-          success: false,
-          error: error.response.data.error || 'Error del servidor',
-          data: null,
-        };
-      }
-      
-      // Manejar errores de red
-      if (error.code === 'ECONNREFUSED' || error.code === 'NETWORK_ERROR') {
-        return {
-          success: false,
-          error: 'No se pudo conectar al servidor. Verifica tu conexión.',
-          data: null,
-        };
-      }
+      const apiError = handleApiError(error);
       
       return {
         success: false,
-        error: error.message || 'Error desconocido',
+        error: apiError.message,
         data: null,
       };
     }
@@ -171,18 +252,11 @@ export const authService = {
     } catch (error: any) {
       console.error('❌ Error refrescando token:', error);
       
-      // Manejar errores de la API
-      if (error.response?.data) {
-        return {
-          success: false,
-          error: error.response.data.error || 'Token inválido',
-          data: null,
-        };
-      }
+      const apiError = handleApiError(error);
       
       return {
         success: false,
-        error: 'Error de conexión',
+        error: apiError.message,
         data: null,
       };
     }
@@ -202,16 +276,19 @@ export const authService = {
   },
 
   // Validar credenciales sin hacer login
-  validateCredentials: (credentials: any): { isValid: boolean; errors: string[] } => {
+  validateCredentials: (credentials: any): { isValid: boolean; errors: ValidationError[] } => {
     try {
       loginSchema.parse(credentials);
       return { isValid: true, errors: [] };
     } catch (error: any) {
-      if (error.name === 'ZodError') {
-        const errors = error.errors.map((err: any) => err.message);
-        return { isValid: false, errors };
+      if (error.name === 'ZodError' || error instanceof z.ZodError) {
+        const validationErrors = extractValidationErrors(error);
+        return { isValid: false, errors: validationErrors };
       }
-      return { isValid: false, errors: ['Error de validación'] };
+      return { 
+        isValid: false, 
+        errors: [{ field: 'general', message: 'Error de validación' }] 
+      };
     }
   },
 
@@ -223,6 +300,29 @@ export const authService = {
     } catch (error) {
       console.warn('⚠️ Servidor no disponible');
       return false;
+    }
+  },
+
+  // Función para obtener errores específicos por campo
+  getFieldErrors: (credentials: any): { email?: string; password?: string } => {
+    try {
+      loginSchema.parse(credentials);
+      return {};
+    } catch (error: any) {
+      const fieldErrors: { email?: string; password?: string } = {};
+      
+      if (error.errors && Array.isArray(error.errors)) {
+        error.errors.forEach((err: any) => {
+          const field = err.path?.[0] as 'email' | 'password';
+          if (field === 'email') {
+            fieldErrors.email = err.message;
+          } else if (field === 'password') {
+            fieldErrors.password = err.message;
+          }
+        });
+      }
+      
+      return fieldErrors;
     }
   },
 };

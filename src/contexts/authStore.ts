@@ -12,6 +12,11 @@ export interface User {
   rol: string;
 }
 
+export interface FieldErrors {
+  email?: string;
+  password?: string;
+}
+
 export interface AuthState {
   // Estado
   isAuthenticated: boolean;
@@ -19,13 +24,16 @@ export interface AuthState {
   user: User | null;
   accessToken: string | null;
   error: string | null;
+  fieldErrors: FieldErrors;
   
   // Acciones
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; fieldErrors: FieldErrors }>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<boolean>;
   clearError: () => void;
+  clearFieldErrors: () => void;
   checkAuthStatus: () => Promise<void>;
+  validateForm: (email: string, password: string) => FieldErrors;
 }
 
 // Configuración de SecureStore para persistencia
@@ -63,11 +71,26 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       error: null,
+      fieldErrors: {},
+
+      // Validar formulario localmente
+      validateForm: (email: string, password: string) => {
+        const fieldErrors = authService.getFieldErrors({ email, password });
+        return fieldErrors;
+      },
 
       // Acción de login
       login: async (email: string, password: string) => {
         try {
-          set({ isLoading: true, error: null });
+          // Limpiar errores previos
+          set({ isLoading: true, error: null, fieldErrors: {} });
+          
+          // Validar formulario primero
+          const fieldErrors = get().validateForm(email, password);
+          if (Object.keys(fieldErrors).length > 0) {
+            set({ isLoading: false, fieldErrors });
+            return { success: false, fieldErrors };
+          }
           
           const response = await authService.login({ email, password });
           
@@ -78,19 +101,39 @@ export const useAuthStore = create<AuthState>()(
               accessToken: response.data.accessToken,
               isLoading: false,
               error: null,
+              fieldErrors: {},
             });
             
             console.log('✅ Login exitoso:', response.data.user.email);
-            return true;
+            return { success: true, fieldErrors: {} };
           } else {
+            // Manejar errores específicos del servidor
+            let serverFieldErrors: FieldErrors = {};
+            
+            // Si es un error de credenciales, marcar ambos campos
+            if (response.error?.includes('Credenciales incorrectas')) {
+              serverFieldErrors = {
+                email: 'Email o contraseña incorrectos',
+                password: 'Email o contraseña incorrectos',
+              };
+            }
+            
+            // Si es un error de validación específico, asignarlo al campo correspondiente
+            if (response.error?.includes('Email inválido')) {
+              serverFieldErrors.email = response.error;
+            } else if (response.error?.includes('contraseña debe tener')) {
+              serverFieldErrors.password = response.error;
+            }
+            
             set({
               isAuthenticated: false,
               user: null,
               accessToken: null,
               isLoading: false,
               error: response.error || 'Error desconocido',
+              fieldErrors: serverFieldErrors,
             });
-            return false;
+            return { success: false, fieldErrors: serverFieldErrors };
           }
         } catch (error: any) {
           console.error('❌ Error en login:', error);
@@ -100,8 +143,9 @@ export const useAuthStore = create<AuthState>()(
             accessToken: null,
             isLoading: false,
             error: error.message || 'Error de conexión',
+            fieldErrors: {},
           });
-          return false;
+          return { success: false, fieldErrors: {} };
         }
       },
 
@@ -132,6 +176,7 @@ export const useAuthStore = create<AuthState>()(
             accessToken: null,
             isLoading: false,
             error: null,
+            fieldErrors: {},
           });
           
           console.log('✅ Logout exitoso');
@@ -148,7 +193,8 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             accessToken: null,
             isLoading: false, 
-            error: error.message 
+            error: error.message,
+            fieldErrors: {},
           });
         }
       },
@@ -164,6 +210,7 @@ export const useAuthStore = create<AuthState>()(
               user: response.data.user,
               accessToken: response.data.accessToken,
               error: null,
+              fieldErrors: {},
             });
             
             console.log('✅ Token refrescado exitosamente');
@@ -175,6 +222,7 @@ export const useAuthStore = create<AuthState>()(
               user: null,
               accessToken: null,
               error: null,
+              fieldErrors: {},
             });
             return false;
           }
@@ -185,6 +233,7 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             accessToken: null,
             error: null,
+            fieldErrors: {},
           });
           return false;
         }
@@ -193,6 +242,11 @@ export const useAuthStore = create<AuthState>()(
       // Limpiar errores
       clearError: () => {
         set({ error: null });
+      },
+
+      // Limpiar errores de campos
+      clearFieldErrors: () => {
+        set({ fieldErrors: {} });
       },
 
       // Verificar estado de autenticación al iniciar la app
@@ -224,6 +278,7 @@ export const useAuthStore = create<AuthState>()(
             accessToken: null,
             isLoading: false,
             error: null,
+            fieldErrors: {},
           });
           
           console.log('🔓 Estado final: No autenticado');
@@ -235,6 +290,7 @@ export const useAuthStore = create<AuthState>()(
             accessToken: null,
             isLoading: false,
             error: null,
+            fieldErrors: {},
           });
         }
       },
