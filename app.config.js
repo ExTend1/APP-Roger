@@ -4,7 +4,7 @@ export default {
     slug: "APP-Roger",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/icon.png",
+    icon: "./assets/images/logo.png",
     scheme: "approger",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
@@ -20,7 +20,7 @@ export default {
     android: {
       package: "com.roger.gym",
       adaptiveIcon: {
-        foregroundImage: "./assets/images/adaptive-icon.png",
+        foregroundImage: "./assets/images/logo.png",
         backgroundColor: "#1a1a1a"
       },
       edgeToEdgeEnabled: true,
@@ -33,7 +33,7 @@ export default {
     web: {
       bundler: "metro",
       output: "static",
-      favicon: "./assets/images/favicon.png"
+      favicon: "./assets/images/logo.png"
     },
     plugins: [
       "expo-router",

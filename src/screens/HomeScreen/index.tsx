@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../contexts/authStore';
+import CustomHeader from '../../components/CustomHeader';
 
 const HomeScreen: React.FC = () => {
   const theme = useTheme();
@@ -21,21 +22,28 @@ const HomeScreen: React.FC = () => {
     }, 200);
   };
 
+  // Manejadores para los iconos del header
+  const handleBellPress = () => {
+    console.log('🔔 Notificaciones');
+    // Aquí puedes navegar a las notificaciones
+  };
+
+  const handleSettingsPress = () => {
+    console.log('⚙️ Configuración');
+    // Aquí puedes navegar a la configuración
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar style="light" backgroundColor={theme.colors.primary} />
+      <StatusBar style="light" backgroundColor="#1a1a1a" />
+      
+      {/* Header personalizado */}
+      <CustomHeader
+        onBellPress={handleBellPress}
+        onSettingsPress={handleSettingsPress}
+      />
       
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Header */}
-        <Surface style={[styles.header, { backgroundColor: theme.colors.primary }]} elevation={4}>
-          <Text style={[styles.welcomeText, { color: theme.colors.onPrimary }]}>
-            ¡Bienvenido de vuelta!
-          </Text>
-          <Text style={[styles.userName, { color: theme.colors.onPrimary }]}>
-            {user?.nombre} {user?.apellido}
-          </Text>
-        </Surface>
-
         {/* Content */}
         <View style={styles.content}>
           <Card style={styles.card} mode="elevated">
@@ -86,18 +94,6 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-  },
-  header: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  welcomeText: {
-    fontSize: 18,
-    marginBottom: 8,
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
   },
   content: {
     flex: 1,

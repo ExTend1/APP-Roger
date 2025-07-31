@@ -1,5 +1,5 @@
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -14,6 +14,8 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { isAuthenticated, isLoading, checkAuthStatus } = useAuthStore();
+  const segments = useSegments();
+  const router = useRouter();
   
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -22,6 +24,23 @@ export default function RootLayout() {
   useEffect(() => {
     checkAuthStatus();
   }, []);
+
+  // Protección de rutas
+  useEffect(() => {
+    if (!isLoading && loaded) {
+      const inAuthGroup = segments[0] === '(tabs)';
+      
+      if (!isAuthenticated && inAuthGroup) {
+        // Usuario no autenticado intentando acceder a rutas protegidas
+        console.log('🚫 Acceso denegado, redirigiendo a login');
+        router.replace('/login');
+      } else if (isAuthenticated && !inAuthGroup) {
+        // Usuario autenticado en login, redirigir a home
+        console.log('✅ Usuario autenticado, redirigiendo a home');
+        router.replace('/(tabs)');
+      }
+    }
+  }, [isAuthenticated, isLoading, segments, loaded]);
 
   useEffect(() => {
     if (loaded && !isLoading) {

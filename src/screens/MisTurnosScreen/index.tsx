@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, FlatList } from 'react-native';
 import { Text, Card, Surface, Chip, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import CustomHeader from '../../components/CustomHeader';
 
 interface Turno {
   id: string;
@@ -70,6 +71,15 @@ const MisTurnosScreen: React.FC = () => {
     }
   };
 
+  // Manejadores para los iconos del header
+  const handleBellPress = () => {
+    console.log('🔔 Notificaciones');
+  };
+
+  const handleSettingsPress = () => {
+    console.log('⚙️ Configuración');
+  };
+
   const renderTurno = ({ item }: { item: Turno }) => (
     <Card style={styles.turnoCard} mode="elevated">
       <Card.Content>
@@ -107,14 +117,13 @@ const MisTurnosScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar style="light" backgroundColor={theme.colors.primary} />
+      <StatusBar style="light" backgroundColor="#1a1a1a" />
       
-      {/* Header */}
-      <Surface style={[styles.header, { backgroundColor: theme.colors.primary }]} elevation={4}>
-        <Text style={[styles.headerText, { color: theme.colors.onPrimary }]}>
-          📋 Mis Turnos
-        </Text>
-      </Surface>
+      {/* Header personalizado */}
+      <CustomHeader
+        onBellPress={handleBellPress}
+        onSettingsPress={handleSettingsPress}
+      />
 
       {/* Content */}
       <View style={styles.content}>
@@ -144,14 +153,6 @@ const MisTurnosScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
   },
   content: {
     flex: 1,

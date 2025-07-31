@@ -3,22 +3,31 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Surface, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import CustomHeader from '../../components/CustomHeader';
 
 const ClaseDetalleScreen: React.FC = () => {
   const theme = useTheme();
 
+  // Manejadores para los iconos del header
+  const handleBellPress = () => {
+    console.log('🔔 Notificaciones');
+  };
+
+  const handleSettingsPress = () => {
+    console.log('⚙️ Configuración');
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar style="light" backgroundColor={theme.colors.primary} />
+      <StatusBar style="light" backgroundColor="#1a1a1a" />
+      
+      {/* Header personalizado */}
+      <CustomHeader
+        onBellPress={handleBellPress}
+        onSettingsPress={handleSettingsPress}
+      />
       
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Header */}
-        <Surface style={[styles.header, { backgroundColor: theme.colors.primary }]} elevation={4}>
-          <Text style={[styles.headerText, { color: theme.colors.onPrimary }]}>
-            📅 Detalle de Clase
-          </Text>
-        </Surface>
-
         {/* Content */}
         <View style={styles.content}>
           <Card style={styles.card} mode="elevated">
@@ -78,14 +87,6 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-  },
-  header: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
   },
   content: {
     flex: 1,

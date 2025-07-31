@@ -181,11 +181,6 @@ export const useAuthStore = create<AuthState>()(
           
           console.log('✅ Logout exitoso');
           
-          // Forzar reinicio de la verificación de autenticación para que navegue correctamente
-          setTimeout(() => {
-            get().checkAuthStatus();
-          }, 100);
-          
         } catch (error: any) {
           console.error('❌ Error en logout:', error);
           set({ 
@@ -255,10 +250,15 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true });
           
           const state = get();
-          console.log('🔍 Verificando estado de auth, token actual:', !!state.accessToken);
+          console.log('🔍 Verificando estado de auth...');
+          console.log('📊 Estado actual:', {
+            isAuthenticated: state.isAuthenticated,
+            hasUser: !!state.user,
+            hasToken: !!state.accessToken
+          });
           
-          // Si ya tenemos un token, intentar refrescarlo
-          if (state.accessToken) {
+          // Si ya tenemos datos de autenticación, intentar refrescar el token
+          if (state.accessToken && state.user) {
             console.log('🔄 Intentando refrescar token existente...');
             const refreshSuccess = await get().refreshToken();
             if (refreshSuccess) {
@@ -268,10 +268,10 @@ export const useAuthStore = create<AuthState>()(
             }
             console.log('❌ Refresh falló, limpiando estado');
           } else {
-            console.log('ℹ️ No hay token, usuario no autenticado');
+            console.log('ℹ️ No hay datos de autenticación');
           }
           
-          // Si no hay token o el refresh falló, no está autenticado
+          // Si no hay datos o el refresh falló, no está autenticado
           set({
             isAuthenticated: false,
             user: null,

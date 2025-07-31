@@ -12,8 +12,6 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
-import { useRouter } from 'expo-router';
-import { useAuthStore } from '../../contexts/authStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -37,25 +35,11 @@ interface SplashScreenProps {
 }
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
-  const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuthStore();
-
   // Valores animados
   const logoScale = useSharedValue(0);
   const logoOpacity = useSharedValue(0);
   const textOpacity = useSharedValue(0);
   const textTranslateY = useSharedValue(20);
-
-  // Función para finalizar el splash
-  const finishSplash = () => {
-    // Verificar si el usuario está autenticado
-    if (isAuthenticated && !isLoading) {
-      router.replace('/(tabs)');
-    } else {
-      router.replace('/login');
-    }
-    onFinish();
-  };
 
   // Iniciar animaciones
   useEffect(() => {
@@ -73,7 +57,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
 
       // Finalizar splash después de 2.5 segundos
       setTimeout(() => {
-        finishSplash();
+        onFinish();
       }, 2500);
     };
 
