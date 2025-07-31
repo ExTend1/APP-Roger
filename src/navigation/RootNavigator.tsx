@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAuthStore } from '../contexts/authStore';
+import { ReservasProvider } from '../contexts/ReservasContext';
 import AuthNavigator from './AuthNavigator';
 import AppNavigator from './AppNavigator';
 
@@ -18,7 +19,10 @@ const RootNavigator: React.FC = () => {
 
   return (
     <NavigationContainer>
-      {isAuthenticated ? <AppNavigator /> : <AuthNavigator />}
+      {/* Temporalmente mostrar AppNavigator para probar reservas */}
+      <ReservasProvider>
+        <AppNavigator />
+      </ReservasProvider>
     </NavigationContainer>
   );
 };

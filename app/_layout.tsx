@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 
 import { useAuthStore } from '@/src/contexts/authStore';
 import ThemeProvider from '@/src/contexts/ThemeProvider';
+import { ReservasProvider } from '@/src/contexts/ReservasContext';
 
 // Prevenir que el splash screen se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -53,6 +54,11 @@ export default function RootLayout() {
     console.log('🔍 RootLayout - Estado:', { isAuthenticated, isLoading, loaded });
   }, [isAuthenticated, isLoading, loaded]);
 
+  // Log para verificar que ReservasProvider se monta
+  useEffect(() => {
+    console.log('🔧 RootLayout - ReservasProvider montado en Expo Router');
+  }, []);
+
   if (!loaded) {
     return null;
   }
@@ -61,12 +67,14 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="loading" options={{ headerShown: false }} />
-            <Stack.Screen name="login" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
+          <ReservasProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="loading" options={{ headerShown: false }} />
+              <Stack.Screen name="login" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+          </ReservasProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
