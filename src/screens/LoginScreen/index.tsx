@@ -3,9 +3,6 @@ import {
   View,
   StyleSheet,
   Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   Alert,
 } from 'react-native';
 import {
@@ -28,10 +25,26 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { SvgXml } from 'react-native-svg';
 import { useAuthStore } from '../../contexts/authStore';
 import { authService, type LoginRequest } from '../../services/authService';
 
 const { width, height } = Dimensions.get('window');
+
+// Logo SVG como string
+const logoSvg = `
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="150.000000pt" height="150.000000pt" viewBox="0 0 150.000000 150.000000"
+ preserveAspectRatio="xMidYMid meet">
+<g transform="translate(0.000000,150.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M411 970 l63 -70 194 0 194 0 29 -29 c32 -32 38 -73 19 -128 -16 -44
+-49 -57 -146 -58 -46 0 -84 -2 -84 -5 0 -3 61 -71 135 -152 l136 -148 49 0 50
+0 0 48 c0 44 -4 51 -54 101 l-54 53 35 31 c52 46 76 101 77 177 1 79 -22 145
+-67 188 -58 57 -91 62 -379 62 l-259 0 62 -70z"/>
+</g>
+</svg>
+`;
 
 interface LoginScreenProps {}
 
@@ -148,115 +161,125 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
   const isButtonDisabled = isLoading || !email.trim() || !password.trim();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar style="light" backgroundColor={theme.colors.primary} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="light" backgroundColor="#1a1a1a" />
       
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Logo animado */}
-          <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
-            <Surface style={[styles.logoSurface, { backgroundColor: theme.colors.primary }]} elevation={4}>
-              <Text style={[styles.logoText, { color: theme.colors.onPrimary }]}>
-                🏋️‍♂️
-              </Text>
-            </Surface>
-            <Text style={[styles.gymName, { color: theme.colors.onBackground }]}>
-              Roger Gym
-            </Text>
-            <Text style={[styles.subtitle, { color: theme.colors.onSurface }]}>
-              Tu entrenamiento, nuestra pasión
-            </Text>
-          </Animated.View>
+             <View style={styles.contentContainer}>
+         {/* Logo animado */}
+         <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
+           {/* Logo circular amarillo con SVG */}
+           <View style={styles.logoCircle}>
+             <SvgXml xml={logoSvg} width={50} height={50} />
+           </View>
+           <Text style={styles.gymName}>
+             Bienvenido
+           </Text>
+           <Text style={styles.subtitle}>
+             Ingresa a tu cuenta del gimnasio
+           </Text>
+         </Animated.View>
 
-          {/* Formulario animado */}
-          <Animated.View style={[styles.formContainer, formAnimatedStyle]}>
-            <Surface style={[styles.formSurface, { backgroundColor: theme.colors.surface }]} elevation={2}>
-              <Text style={[styles.formTitle, { color: theme.colors.onSurface }]}>
-                Iniciar Sesión
-              </Text>
+         {/* Formulario animado */}
+         <Animated.View style={[styles.formContainer, formAnimatedStyle]}>
+           <Surface style={styles.formSurface} elevation={2}>
+             {/* Campo de email */}
+             <View style={styles.inputContainer}>
+               <Text style={styles.inputLabel}>Email</Text>
+                                <TextInput
+                 value={email}
+                 onChangeText={handleEmailChange}
+                 mode="outlined"
+                 placeholder="tu@email.com"
+                 keyboardType="email-address"
+                 autoCapitalize="none"
+                 autoComplete="email"
+                 autoCorrect={false}
+                 style={styles.input}
+                 error={formErrors.some(err => err.includes('Email'))}
+                 disabled={isLoading}
+                 outlineColor="#FFFFFF"
+                 activeOutlineColor="#FFD700"
+                 textColor="#FFFFFF"
+                 placeholderTextColor="#CCCCCC"
+               />
+             </View>
 
-              {/* Campo de email */}
-              <TextInput
-                label="Email"
-                value={email}
-                onChangeText={handleEmailChange}
-                mode="outlined"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                autoCorrect={false}
-                left={<TextInput.Icon icon="email" />}
-                style={styles.input}
-                error={formErrors.some(err => err.includes('Email'))}
-                disabled={isLoading}
-              />
+             {/* Campo de contraseña */}
+             <View style={styles.inputContainer}>
+               <Text style={styles.inputLabel}>Contraseña</Text>
+                                <TextInput
+                 value={password}
+                 onChangeText={handlePasswordChange}
+                 mode="outlined"
+                 placeholder="••••••••"
+                 secureTextEntry={!showPassword}
+                 autoCapitalize="none"
+                 autoComplete="password"
+                 autoCorrect={false}
+                 right={
+                   <TextInput.Icon
+                     icon={showPassword ? "eye-off" : "eye"}
+                     onPress={() => setShowPassword(!showPassword)}
+                   />
+                 }
+                 style={styles.input}
+                 error={formErrors.some(err => err.includes('contraseña'))}
+                 disabled={isLoading}
+                 outlineColor="#FFFFFF"
+                 activeOutlineColor="#FFD700"
+                 textColor="#FFFFFF"
+                 placeholderTextColor="#CCCCCC"
+               />
+             </View>
 
-              {/* Campo de contraseña */}
-              <TextInput
-                label="Contraseña"
-                value={password}
-                onChangeText={handlePasswordChange}
-                mode="outlined"
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoComplete="password"
-                autoCorrect={false}
-                left={<TextInput.Icon icon="lock" />}
-                right={
-                  <TextInput.Icon
-                    icon={showPassword ? "eye-off" : "eye"}
-                    onPress={() => setShowPassword(!showPassword)}
-                  />
-                }
-                style={styles.input}
-                error={formErrors.some(err => err.includes('contraseña'))}
-                disabled={isLoading}
-              />
+             {/* Mostrar errores de validación */}
+             {formErrors.length > 0 && (
+               <View style={styles.errorContainer}>
+                 {formErrors.map((error, index) => (
+                   <Text key={index} style={styles.errorText}>
+                     • {error}
+                   </Text>
+                 ))}
+               </View>
+             )}
 
-              {/* Mostrar errores de validación */}
-              {formErrors.length > 0 && (
-                <View style={styles.errorContainer}>
-                  {formErrors.map((error, index) => (
-                    <Text key={index} style={[styles.errorText, { color: theme.colors.error }]}>
-                      • {error}
-                    </Text>
-                  ))}
-                </View>
-              )}
+             {/* Botón de login */}
+             <Button
+               mode="contained"
+               onPress={handleLogin}
+               disabled={isButtonDisabled}
+               loading={isLoading}
+               style={styles.loginButton}
+               contentStyle={styles.loginButtonContent}
+               labelStyle={styles.loginButtonLabel}
+               buttonColor="#FFD700"
+               textColor="#000000"
+             >
+               {isLoading ? 'Iniciando Sesión...' : 'Iniciar Sesión'}
+             </Button>
 
-              {/* Botón de login */}
-              <Button
-                mode="contained"
-                onPress={handleLogin}
-                disabled={isButtonDisabled}
-                loading={isLoading}
-                style={styles.loginButton}
-                contentStyle={styles.loginButtonContent}
-                labelStyle={styles.loginButtonLabel}
-              >
-                {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-              </Button>
-
-              {/* Información adicional */}
-              <View style={styles.infoContainer}>
-                <Text style={[styles.infoText, { color: theme.colors.onSurfaceVariant }]}>
-                  ¿Problemas para acceder?
-                </Text>
-                <Text style={[styles.infoText, { color: theme.colors.onSurfaceVariant }]}>
-                  Contacta al administrador del gimnasio
-                </Text>
-              </View>
-            </Surface>
-          </Animated.View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+             {/* Información de cuenta */}
+                            <View style={styles.infoContainer}>
+               <View style={styles.infoBox}>
+                 <IconButton
+                   icon="information"
+                   size={20}
+                   iconColor="#FFD700"
+                   style={styles.infoIcon}
+                 />
+                 <View style={styles.infoTextContainer}>
+                   <Text style={styles.infoTitle}>
+                     ¿No tienes cuenta?
+                   </Text>
+                   <Text style={styles.infoText}>
+                     Solicita tu cuenta en recepción para acceder a la app del gimnasio.
+                   </Text>
+                 </View>
+               </View>
+             </View>
+           </Surface>
+         </Animated.View>
+       </View>
 
       {/* Snackbar para errores */}
       <Snackbar
@@ -266,7 +289,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
           clearError();
         }}
         duration={4000}
-        style={{ backgroundColor: theme.colors.errorContainer }}
+        style={{ backgroundColor: '#f44336' }}
         action={{
           label: 'Cerrar',
           onPress: () => {
@@ -275,7 +298,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
           },
         }}
       >
-        <Text style={{ color: theme.colors.onErrorContainer }}>
+        <Text style={{ color: 'white' }}>
           {error || 'Error desconocido'}
         </Text>
       </Snackbar>
@@ -286,39 +309,43 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#1a1a1a',
   },
-  keyboardView: {
+  contentContainer: {
     flex: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
-    minHeight: height,
   },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 40,
   },
-  logoSurface: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FFD700',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-  },
-  logoText: {
-    fontSize: 40,
+    shadowColor: '#FFD700',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
   gymName: {
     fontSize: 32,
     fontWeight: 'bold',
+    color: '#FFD700',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    opacity: 0.7,
+    color: '#FFA500',
     textAlign: 'center',
   },
   formContainer: {
@@ -328,16 +355,20 @@ const styles = StyleSheet.create({
   },
   formSurface: {
     padding: 24,
-    borderRadius: 16,
+    borderRadius: 12,
+    backgroundColor: 'transparent',
   },
-  formTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 24,
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    marginBottom: 8,
   },
   input: {
-    marginBottom: 16,
+    backgroundColor: 'transparent',
   },
   errorContainer: {
     marginBottom: 16,
@@ -346,25 +377,57 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 14,
     marginBottom: 4,
+    color: '#f44336',
   },
   loginButton: {
     marginTop: 8,
     marginBottom: 24,
+    borderRadius: 8,
+    shadowColor: '#FFD700',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
   loginButtonContent: {
     paddingVertical: 8,
   },
   loginButtonLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   infoContainer: {
-    alignItems: 'center',
+    marginTop: 16,
+  },
+  infoBox: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#3a3a3a',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  infoIcon: {
+    marginRight: 8,
+    marginTop: 0,
+  },
+  infoTextContainer: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
   infoText: {
-    fontSize: 12,
-    textAlign: 'center',
-    marginBottom: 4,
+    fontSize: 14,
+    color: '#FFFFFF',
+    lineHeight: 20,
   },
 });
 

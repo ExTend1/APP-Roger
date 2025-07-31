@@ -1,0 +1,12 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo circular amarillo -->
+  <circle cx="100" cy="100" r="80" fill="#FFD700" stroke="none"/>
+  
+  <!-- Logo SVG del gimnasio -->
+  <g transform="translate(50, 50) scale(0.67)">
+    <path d="M411 970 l63 -70 194 0 194 0 29 -29 c32 -32 38 -73 19 -128 -16 -44
+    -49 -57 -146 -58 -46 0 -84 -2 -84 -5 0 -3 61 -71 135 -152 l136 -148 49 0 50
+    0 0 48 c0 44 -4 51 -54 101 l-54 53 35 31 c52 46 76 101 77 177 1 79 -22 145
+    -67 188 -58 57 -91 62 -379 62 l-259 0 62 -70z" fill="#000000"/>
+  </g>
+</svg> 
