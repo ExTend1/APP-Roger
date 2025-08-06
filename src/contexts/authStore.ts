@@ -1,6 +1,6 @@
+import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import * as SecureStore from 'expo-secure-store';
 import { authService } from '../services/authService';
 
 // Tipos para el usuario y estado de autenticación
@@ -199,11 +199,15 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await authService.refreshToken();
           
-          if (response.success) {
+          if (response.success && response.data) {
+            // El refresh token solo devuelve el accessToken, no el usuario
+            // Mantenemos el usuario existente y actualizamos solo el token
+            const currentState = get();
+            
             set({
               isAuthenticated: true,
-              user: response.data.user,
-              accessToken: response.data.accessToken,
+              user: currentState.user, // Mantener el usuario existente
+              accessToken: response.data.accessToken, // Actualizar solo el token
               error: null,
               fieldErrors: {},
             });

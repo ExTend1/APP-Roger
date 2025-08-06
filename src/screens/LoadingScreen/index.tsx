@@ -1,18 +1,17 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
-import { Text, Surface, useTheme } from 'react-native-paper';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import React, { useEffect } from 'react';
+import { Dimensions, StyleSheet, View } from 'react-native';
+import { Surface, Text, useTheme } from 'react-native-paper';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withRepeat,
-  withTiming,
-  interpolate,
-  runOnJS,
+    interpolate,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSpring,
+    withTiming
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../contexts/authStore';
 
 const { width, height } = Dimensions.get('window');
@@ -123,7 +122,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar style="light" backgroundColor={theme.colors.primary} />
+      <StatusBar style="light" />
       
       <View style={styles.content}>
         {/* Logo animado */}

@@ -1,20 +1,18 @@
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, FlatList, Dimensions } from 'react-native';
-import { 
-  Text, 
-  Card, 
-  Surface, 
-  useTheme, 
-  Button, 
-  Chip, 
-  Searchbar,
-  SegmentedButtons,
-  Snackbar,
+import { FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import {
   ActivityIndicator,
+  Button,
+  Card,
+  Chip,
   FAB,
+  Searchbar,
+  Snackbar,
+  Text,
+  useTheme
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import CustomHeader from '../../components/CustomHeader';
 import { useReservas } from '../../contexts/ReservasContext';
 import { ClaseCardData } from '../../types/reservas';
@@ -252,7 +250,7 @@ const ClaseDetalleScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar style="light" backgroundColor="#1a1a1a" />
+      <StatusBar style="light" />
       
       {/* Header personalizado */}
       <CustomHeader
