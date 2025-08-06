@@ -36,7 +36,7 @@ export const refreshResponseSchema = z.object({
   error: z.string().nullable(),
   data: z.object({
     accessToken: z.string(),
-    user: userSchema,
+    // El refresh token no devuelve el usuario, solo el token
   }).nullable(),
 });
 
@@ -242,7 +242,7 @@ export const authService = {
       // Validar respuesta del servidor
       const validatedResponse = refreshResponseSchema.parse(response.data);
       
-      if (validatedResponse.success) {
+      if (validatedResponse.success && validatedResponse.data) {
         console.log('✅ Token refrescado exitosamente');
       } else {
         console.warn('⚠️ Refresh token fallido:', validatedResponse.error);

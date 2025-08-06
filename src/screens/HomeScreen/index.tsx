@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Card, Button, Surface, useTheme, Chip } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Button, Card, Chip, Text, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomHeader from '../../components/CustomHeader';
 import { useAuthStore } from '../../contexts/authStore';
 import { useReservas } from '../../contexts/ReservasContext';
-import CustomHeader from '../../components/CustomHeader';
 import { calcularProximaClase, getProximaClaseTexto, NextClassInfo } from '../../utils/nextClassCalculator';
 import testNextClassCalculator from '../../utils/nextClassCalculator.test';
 
@@ -122,7 +122,7 @@ const HomeScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar style="light" backgroundColor="#1a1a1a" />
+      <StatusBar style="light" />
       
       {/* Header personalizado */}
       <CustomHeader

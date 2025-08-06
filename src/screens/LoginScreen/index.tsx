@@ -1,30 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  StyleSheet,
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  SafeAreaView,
+    Dimensions,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    View,
 } from 'react-native';
 import {
-  Text,
-  TextInput,
-  Button,
-  Surface,
-  IconButton,
+    Button,
+    IconButton,
+    Surface,
+    Text,
+    TextInput,
 } from 'react-native-paper';
-import { StatusBar } from 'expo-status-bar';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withDelay,
-  withSequence,
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withSequence,
+    withSpring,
 } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
-import { useRouter } from 'expo-router';
+import ScreenWrapper from '../../components/ScreenWrapper';
 import { useAuthStore } from '../../contexts/authStore';
 
 const { width, height } = Dimensions.get('window');
@@ -165,8 +166,9 @@ const LoginScreen: React.FC = () => {
   const hasGeneralError = !!error;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="light" backgroundColor="#1a1a1a" />
+    <ScreenWrapper backgroundColor="#1a1a1a">
+      <StatusBar style="light" />
+      <SafeAreaView style={styles.container}>
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -303,14 +305,14 @@ const LoginScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
   },
   keyboardAvoidingView: {
     flex: 1,

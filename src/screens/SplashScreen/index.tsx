@@ -1,17 +1,16 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
-import { Text } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
+import React, { useEffect } from 'react';
+import { Dimensions, StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-paper';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withDelay,
-  withSequence,
-  withTiming,
-  runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withSequence,
+    withSpring
 } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
+import ScreenWrapper from '../../components/ScreenWrapper';
 
 const { width, height } = Dimensions.get('window');
 
@@ -76,29 +75,30 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   }));
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" backgroundColor="#1a1a1a" />
+    <ScreenWrapper backgroundColor="#1a1a1a">
+      <StatusBar style="light" />
       
-      {/* Logo animado */}
-      <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
-        <View style={styles.logoCircle}>
-          <SvgXml xml={logoSvg} width={80} height={80} />
-        </View>
-      </Animated.View>
+      <View style={styles.container}>
+        {/* Logo animado */}
+        <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
+          <View style={styles.logoCircle}>
+            <SvgXml xml={logoSvg} width={80} height={80} />
+          </View>
+        </Animated.View>
 
-      {/* Texto animado */}
-      <Animated.View style={[styles.textContainer, textAnimatedStyle]}>
-        <Text style={styles.appName}>Roger Gym</Text>
-        <Text style={styles.subtitle}>Tu entrenamiento, nuestra pasión</Text>
-      </Animated.View>
-    </View>
+        {/* Texto animado */}
+        <Animated.View style={[styles.textContainer, textAnimatedStyle]}>
+          <Text style={styles.appName}>Roger Gym</Text>
+          <Text style={styles.subtitle}>Tu entrenamiento, nuestra pasión</Text>
+        </Animated.View>
+      </View>
+    </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
   },
