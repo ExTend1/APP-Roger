@@ -54,10 +54,6 @@ const ClaseDetalleScreen: React.FC = () => {
     console.log('🔔 Notificaciones');
   };
 
-  const handleSettingsPress = () => {
-    console.log('⚙️ Configuración');
-  };
-
   // Manejador de reserva/cancelación
   const handleReservaToggle = async (clase: ClaseCardData) => {
     const isReservada = isClaseReservada(clase.id);
@@ -255,7 +251,6 @@ const ClaseDetalleScreen: React.FC = () => {
       {/* Header personalizado */}
       <CustomHeader
         onBellPress={handleBellPress}
-        onSettingsPress={handleSettingsPress}
       />
 
       {/* Contenido principal */}

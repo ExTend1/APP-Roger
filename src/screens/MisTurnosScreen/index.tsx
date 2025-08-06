@@ -45,10 +45,6 @@ const MisTurnosScreen: React.FC = () => {
     console.log('🔔 Notificaciones');
   };
 
-  const handleSettingsPress = () => {
-    console.log('⚙️ Configuración');
-  };
-
   // Manejador de cancelación
   const handleCancelar = async (claseId: string, nombreClase: string) => {
     try {
@@ -229,7 +225,6 @@ const MisTurnosScreen: React.FC = () => {
       {/* Header personalizado */}
       <CustomHeader
         onBellPress={handleBellPress}
-        onSettingsPress={handleSettingsPress}
       />
 
       {/* Content */}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, IconButton } from 'react-native-paper';
+import { Text, IconButton, useTheme } from 'react-native-paper';
 import { SvgXml } from 'react-native-svg';
 import { useAuthStore } from '../contexts/authStore';
 
@@ -21,14 +21,13 @@ fill="#000000" stroke="none">
 
 interface CustomHeaderProps {
   onBellPress?: () => void;
-  onSettingsPress?: () => void;
 }
 
 const CustomHeader: React.FC<CustomHeaderProps> = ({
   onBellPress,
-  onSettingsPress,
 }) => {
   const { user } = useAuthStore();
+  const theme = useTheme();
 
   // Obtener el nombre del usuario o usar un valor por defecto
   const userName = user?.nombre || 'Usuario';
@@ -36,18 +35,24 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
   const subtitle = '¡Listo para entrenar!';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
       {/* Lado izquierdo - Logo y texto */}
       <View style={styles.leftSection}>
         {/* Logo circular amarillo */}
-        <View style={styles.logoCircle}>
+        <View style={[
+          styles.logoCircle, 
+          { 
+            backgroundColor: theme.colors.secondary,
+            shadowColor: theme.colors.secondary,
+          }
+        ]}>
           <SvgXml xml={logoSvg} width={24} height={24} />
         </View>
         
         {/* Texto de saludo */}
         <View style={styles.textContainer}>
-          <Text style={styles.greetingText}>{greeting}</Text>
-          <Text style={styles.subtitleText}>{subtitle}</Text>
+          <Text style={[styles.greetingText, { color: theme.colors.onSurface }]}>{greeting}</Text>
+          <Text style={[styles.subtitleText, { color: theme.colors.onSurfaceVariant }]}>{subtitle}</Text>
         </View>
       </View>
 
@@ -57,17 +62,8 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
         <IconButton
           icon="bell-outline"
           size={24}
-          iconColor="#CCCCCC"
+          iconColor={theme.colors.onSurfaceVariant}
           onPress={onBellPress}
-          style={styles.iconButton}
-        />
-        
-        {/* Icono de configuración */}
-        <IconButton
-          icon="cog-outline"
-          size={24}
-          iconColor="#CCCCCC"
-          onPress={onSettingsPress}
           style={styles.iconButton}
         />
       </View>
@@ -82,7 +78,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#1a1a1a', // Fondo oscuro
   },
   leftSection: {
     flexDirection: 'row',
@@ -93,11 +88,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFD700', // Amarillo dorado
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    shadowColor: '#FFD700',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -112,12 +105,10 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFFFFF', // Texto blanco
     marginBottom: 2,
   },
   subtitleText: {
     fontSize: 14,
-    color: '#CCCCCC', // Texto gris claro
     fontWeight: '500',
   },
   rightSection: {

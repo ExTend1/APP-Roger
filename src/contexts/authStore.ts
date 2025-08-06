@@ -9,6 +9,8 @@ export interface User {
   nombre: string;
   apellido: string;
   email: string;
+  telefono?: string;
+  genero?: string;
   rol: string;
 }
 
@@ -34,6 +36,7 @@ export interface AuthState {
   clearFieldErrors: () => void;
   checkAuthStatus: () => Promise<void>;
   validateForm: (email: string, password: string) => FieldErrors;
+  updateUser: (userData: Partial<User>) => void;
 }
 
 // Configuración de SecureStore para persistencia
@@ -94,7 +97,7 @@ export const useAuthStore = create<AuthState>()(
           
           const response = await authService.login({ email, password });
           
-          if (response.success) {
+          if (response.success && response.data) {
             set({
               isAuthenticated: true,
               user: response.data.user,
@@ -104,7 +107,7 @@ export const useAuthStore = create<AuthState>()(
               fieldErrors: {},
             });
             
-            console.log('✅ Login exitoso:', response.data.user.email);
+            console.log('✅ Login exitoso:', response.data.user?.email);
             return { success: true, fieldErrors: {} };
           } else {
             // Manejar errores específicos del servidor
@@ -204,6 +207,7 @@ export const useAuthStore = create<AuthState>()(
             // Mantenemos el usuario existente y actualizamos solo el token
             const currentState = get();
             
+
             set({
               isAuthenticated: true,
               user: currentState.user, // Mantener el usuario existente
@@ -246,6 +250,19 @@ export const useAuthStore = create<AuthState>()(
       // Limpiar errores de campos
       clearFieldErrors: () => {
         set({ fieldErrors: {} });
+      },
+
+      // Actualizar datos del usuario
+      updateUser: (userData: Partial<User>) => {
+        set((state) => {
+          if (state.user) {
+            return {
+              ...state,
+              user: { ...state.user, ...userData }
+            };
+          }
+          return state;
+        });
       },
 
       // Verificar estado de autenticación al iniciar la app

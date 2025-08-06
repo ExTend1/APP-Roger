@@ -7,7 +7,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import 'react-native-reanimated';
 
 import { useAuthStore } from '@/src/contexts/authStore';
-import ThemeProvider from '@/src/contexts/ThemeProvider';
+import { ThemeProvider } from '@/src/contexts/ThemeContext';
+import { PaperThemeProvider } from '@/src/contexts/ThemeProvider';
 import { ReservasProvider } from '@/src/contexts/ReservasContext';
 
 // Prevenir que el splash screen se oculte automáticamente
@@ -30,12 +31,13 @@ export default function RootLayout() {
   useEffect(() => {
     if (!isLoading && loaded) {
       const inAuthGroup = segments[0] === '(tabs)';
+      const isProfileEdit = segments[0] === 'profile-edit';
       
-      if (!isAuthenticated && inAuthGroup) {
+      if (!isAuthenticated && (inAuthGroup || isProfileEdit)) {
         // Usuario no autenticado intentando acceder a rutas protegidas
         console.log('🚫 Acceso denegado, redirigiendo a login');
         router.replace('/login');
-      } else if (isAuthenticated && !inAuthGroup) {
+      } else if (isAuthenticated && segments[0] === 'login') {
         // Usuario autenticado en login, redirigir a home
         console.log('✅ Usuario autenticado, redirigiendo a home');
         router.replace('/(tabs)');
@@ -65,14 +67,17 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <ReservasProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="loading" options={{ headerShown: false }} />
-              <Stack.Screen name="login" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-          </ReservasProvider>
+          <PaperThemeProvider>
+            <ReservasProvider>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="loading" options={{ headerShown: false }} />
+                <Stack.Screen name="login" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="profile-edit" options={{ headerShown: false }} />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+            </ReservasProvider>
+          </PaperThemeProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

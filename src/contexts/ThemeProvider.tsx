@@ -1,20 +1,20 @@
 import React, { ReactNode } from 'react';
 import { PaperProvider, MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
-import { useColorScheme } from 'react-native';
+import { useTheme as useAppTheme } from './ThemeContext';
 
 interface ThemeProviderProps {
   children: ReactNode;
 }
 
 // Tema oscuro personalizado para Roger Gym
-const customDarkTheme = {
+const createDarkTheme = () => ({
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
     primary: '#FF6B35',        // Naranja vibrante para el gym
     primaryContainer: '#FF8A65', 
-    secondary: '#FFC107',      // Amarillo dorado
-    secondaryContainer: '#FFD54F',
+    secondary: '#FFD700',      // Amarillo dorado (más intenso para dark)
+    secondaryContainer: '#FFE135',
     tertiary: '#4CAF50',       // Verde para éxito
     tertiaryContainer: '#81C784',
     error: '#F44336',          // Rojo para errores
@@ -38,24 +38,24 @@ const customDarkTheme = {
     scrim: '#000000',
     surfaceTint: '#FF6B35',
   },
-};
+});
 
-// Tema claro personalizado (por si se quiere usar más tarde)
-const customLightTheme = {
+// Tema claro personalizado con amarillo adaptado
+const createLightTheme = () => ({
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
-    primary: '#FF6B35',
+    primary: '#FF6B35',        // Naranja vibrante (se mantiene)
     primaryContainer: '#FFAB91',
-    secondary: '#FF9800',
-    secondaryContainer: '#FFE0B2',
-    tertiary: '#4CAF50',
+    secondary: '#FFA000',      // Amarillo más suave para light
+    secondaryContainer: '#FFD54F',
+    tertiary: '#4CAF50',       // Verde para éxito
     tertiaryContainer: '#C8E6C9',
-    error: '#F44336',
+    error: '#F44336',          // Rojo para errores
     errorContainer: '#FFCDD2',
-    surface: '#FFFFFF',
+    surface: '#FFFFFF',        // Superficie clara
     surfaceVariant: '#F5F5F5',
-    background: '#FAFAFA',
+    background: '#FAFAFA',     // Fondo claro
     onBackground: '#000000',
     onSurface: '#000000',
     onSurfaceVariant: '#666666',
@@ -72,14 +72,13 @@ const customLightTheme = {
     scrim: '#000000',
     surfaceTint: '#FF6B35',
   },
-};
+});
 
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const colorScheme = useColorScheme();
+export const PaperThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+  const { themeMode } = useAppTheme();
   
-  // Por ahora siempre usar tema oscuro, pero se puede cambiar más tarde
-  // const theme = colorScheme === 'dark' ? customDarkTheme : customLightTheme;
-  const theme = customDarkTheme;
+  // Usar tema claro u oscuro según el estado
+  const theme = themeMode === 'light' ? createLightTheme() : createDarkTheme();
 
   return (
     <PaperProvider theme={theme}>
@@ -87,5 +86,3 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     </PaperProvider>
   );
 };
-
-export default ThemeProvider;
