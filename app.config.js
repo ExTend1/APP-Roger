@@ -12,7 +12,7 @@ export default {
       supportsTablet: true,
       bundleIdentifier: "com.roger.gym",
       splash: {
-        image: "./assets/images/splash-logo.svg",
+        image: "./assets/images/splashscreen_logo.png",
         resizeMode: "contain",
         backgroundColor: "#1a1a1a"
       }
@@ -25,7 +25,7 @@ export default {
       },
       edgeToEdgeEnabled: true,
       splash: {
-        image: "./assets/images/splash-logo.svg",
+        image: "./assets/images/splashscreen_logo.png",
         resizeMode: "contain",
         backgroundColor: "#1a1a1a"
       }
@@ -40,7 +40,7 @@ export default {
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/splash-logo.svg",
+          image: "./assets/images/splashscreen_logo.png",
           imageWidth: 200,
           resizeMode: "contain",
           backgroundColor: "#1a1a1a"

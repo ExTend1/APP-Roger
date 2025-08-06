@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
-import { Text, Card, Button, Surface, useTheme, Chip, IconButton, Avatar } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Dimensions, Image, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Chip, IconButton, Surface, Text, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomHeader from '../../components/CustomHeader';
 import { useAuthStore } from '../../contexts/authStore';
 import { useReservas } from '../../contexts/ReservasContext';
-import CustomHeader from '../../components/CustomHeader';
 import { calcularProximaClase, getProximaClaseTexto, NextClassInfo } from '../../utils/nextClassCalculator';
 import testNextClassCalculator from '../../utils/nextClassCalculator.test';
 
@@ -17,12 +16,29 @@ const HomeScreen: React.FC = () => {
   const theme = useTheme();
   const router = useRouter();
   const { user, logout } = useAuthStore();
-  const { state, fetchClases, fetchReservas } = useReservas();
+  const { state, fetchClases, fetchReservas, getReservasActivas } = useReservas();
   const [proximaClase, setProximaClase] = useState<NextClassInfo | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Cargar datos al montar el componente
+  // Función para refrescar datos
+  const onRefresh = useCallback(async () => {
+    if (!user) return;
+    
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchClases(), fetchReservas()]);
+    } catch (error) {
+      console.warn('Error refrescando datos:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchClases, fetchReservas, user]);
+
+  // Cargar datos al montar el componente y cuando cambie el usuario
   useEffect(() => {
     const loadData = async () => {
+      if (!user) return; // No cargar datos si no hay usuario logueado
+      
       try {
         await Promise.all([fetchClases(), fetchReservas()]);
       } catch (error) {
@@ -36,7 +52,7 @@ const HomeScreen: React.FC = () => {
     if (__DEV__) {
       testNextClassCalculator();
     }
-  }, [fetchClases, fetchReservas]);
+  }, [fetchClases, fetchReservas, user?.id]); // Agregar user?.id como dependencia
 
   // Función para obtener el icono según el tipo de clase
   const getIconByTipo = (tipo: string): string => {
@@ -80,6 +96,9 @@ const HomeScreen: React.FC = () => {
     }
   }, [state.clases, state.reservas]);
 
+  // Obtener reservas activas para el indicador
+  const reservasActivas = getReservasActivas();
+
   const handleLogout = async () => {
     await logout();
     // Navegación explícita como respaldo
@@ -93,6 +112,32 @@ const HomeScreen: React.FC = () => {
     // Aquí puedes navegar a las notificaciones
   };
 
+  // Navegar a mis reservas
+  const handleNavigateToReservas = () => {
+    router.push('/turnos');
+  };
+
+  // Navegar a clases
+  const handleNavigateToClases = () => {
+    router.push('/clases');
+  };
+
+  // Mostrar loading si no hay datos y está cargando
+  if (state.isLoading && (!state.clases || !state.reservas)) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <StatusBar style={theme.dark ? "light" : "dark"} backgroundColor={theme.colors.surface} />
+        <CustomHeader onBellPress={handleBellPress} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.onSurface }]}>
+            Cargando datos...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar style={theme.dark ? "light" : "dark"} backgroundColor={theme.colors.surface} />
@@ -105,109 +150,144 @@ const HomeScreen: React.FC = () => {
       <ScrollView 
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
+          />
+        }
       >
         {/* Content */}
-        <View style={styles.content}>
+        <View style={styles.content} >
           
           {/* Quick Stats Grid */}
           <View style={styles.statsGrid}>
-            <Surface style={[styles.statCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
-              <View style={styles.statContent}>
-                <IconButton
-                  icon="calendar-check"
-                  size={24}
-                  iconColor={theme.colors.primary}
-                  style={styles.statIcon}
-                />
-                <View style={styles.statTextContainer}>
-                  <Text style={[styles.statNumber, { color: theme.colors.onSurface }]}>
-                    {state.reservas?.length || 0}
+            {/* Indicador de clases arriba */}
+            <TouchableOpacity 
+              style={[styles.workoutCard, { backgroundColor: '#FFE95C' }]}
+              onPress={handleNavigateToClases}
+              activeOpacity={0.8}
+            >
+              <View style={styles.workoutContent}>
+                <View style={styles.workoutTextContainer}>
+                  <Text style={styles.workoutTitle}>¡Anotate a Nuestras Clases!</Text>
+                  <Text style={[styles.workoutSubtitle, {fontSize: 20, fontWeight: 'bold'}]}>
+                    {state.isLoading ? 'Cargando...' : `${state.clases?.length || 0} clases disponibles`}
                   </Text>
-                  <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>
-                    Reservas
-                  </Text>
+                  <View style={styles.caloriesContainer}>
+                    <View style={styles.caloriesBadge}>
+                      <Text style={styles.caloriesText}>
+                        {state.isLoading ? '...' : (state.clases?.length || 0)}
+                      </Text>
+                    </View>
+                    <IconButton
+                      icon="trending-up"
+                      size={16}
+                      iconColor="white"
+                      style={styles.trendIcon}
+                    />
+                  </View>
+                </View>
+                
+                {/* Imagen que se sale del contenedor */}
+                <View style={styles.imageContainer}>
+                  <Image 
+                    source={require('../../../assets/images/aguchin.png')}
+                    style={styles.workoutImage}
+                    resizeMode="cover"
+                  />
+                  {/* Círculos de fondo para efecto dinámico */}
+                  <View style={styles.backgroundCircles}>
+                    <View style={[styles.circle, styles.circle1]} />
+                    <View style={[styles.circle, styles.circle2]} />
+                    <View style={[styles.circle, styles.circle3]} />
+                  </View>
                 </View>
               </View>
-            </Surface>
-
-            <Surface style={[styles.statCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
-              <View style={styles.statContent}>
-                <IconButton
-                  icon="dumbbell"
-                  size={24}
-                  iconColor={theme.colors.secondary}
-                  style={styles.statIcon}
-                />
-                <View style={styles.statTextContainer}>
-                  <Text style={[styles.statNumber, { color: theme.colors.onSurface }]}>
-                    {state.clases?.length || 0}
-                  </Text>
-                  <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>
-                    Clases
-                  </Text>
-                </View>
-              </View>
-            </Surface>
+            </TouchableOpacity>
           </View>
 
-          {/* Next Class Section */}
-          <Surface style={[styles.nextClassCard, { backgroundColor: theme.colors.surface }]} elevation={2}>
-            <View style={styles.nextClassHeader}>
-              <IconButton
-                icon="clock-outline"
-                size={20}
-                iconColor={theme.colors.primary}
-              />
-              <Text style={[styles.nextClassTitle, { color: theme.colors.onSurface }]}>
-                Próxima Clase
-              </Text>
+          {/* Grid de dos columnas: Próxima Clase y Mis Reservas */}
+          <View style={styles.bottomGrid}>
+            {/* Próxima Clase - Izquierda */}
+            <View style={styles.leftColumn}>
+              <Surface style={[styles.nextClassCard, { backgroundColor: theme.colors.surface }]} elevation={2}>
+                <View style={styles.nextClassHeader}>
+                  <Text style={[styles.nextClassTitle, { color: theme.colors.onSurface }]}>
+                    Próxima Clase
+                  </Text>
+                </View>
+                
+                {proximaClase ? (
+                  <View style={styles.nextClassContent}>
+                    <View style={styles.nextClassIconContainer}>
+                    </View>
+                    <View style={styles.nextClassDetails}>
+                      <Text style={[styles.nextClassName, { color: theme.colors.onSurface }]}>
+                        {proximaClase.clase.nombre}
+                      </Text>
+                      <Text style={[styles.nextClassTime, { color: theme.colors.onSurfaceVariant }]}>
+                        {getProximaClaseTexto(proximaClase)}
+                      </Text>
+                      <Chip 
+                        mode="flat"
+                        style={[styles.nextClassChip, { backgroundColor: getColorByTipo(proximaClase.clase.tipo) }]}
+                        textStyle={{ color: 'white', fontSize: 12, fontWeight: '600' }}
+                      >
+                        {proximaClase.clase.tipo.charAt(0).toUpperCase() + proximaClase.clase.tipo.slice(1)}
+                      </Chip>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.noClassContainer}>
+                    <Text style={[styles.noClassText, { color: theme.colors.onSurfaceVariant }]}>
+                      No hay clases programadas
+                    </Text>
+                    <Text style={[styles.noClassSubtext, { color: theme.colors.onSurfaceVariant }]}>
+                      Ve a la sección de clases para reservar
+                    </Text>
+                  </View>
+                )}
+              </Surface>
             </View>
-            
-            {proximaClase ? (
-              <View style={styles.nextClassContent}>
-                <View style={styles.nextClassIconContainer}>
-                  <IconButton
-                    icon={getIconByTipo(proximaClase.clase.tipo)}
-                    size={32}
-                    iconColor="white"
-                    style={[styles.nextClassIcon, { backgroundColor: getColorByTipo(proximaClase.clase.tipo) }]}
-                  />
-                </View>
-                <View style={styles.nextClassDetails}>
-                  <Text style={[styles.nextClassName, { color: theme.colors.onSurface }]}>
-                    {proximaClase.clase.nombre}
-                  </Text>
-                  <Text style={[styles.nextClassTime, { color: theme.colors.onSurfaceVariant }]}>
-                    {getProximaClaseTexto(proximaClase)}
-                  </Text>
-                  <Chip 
-                    mode="flat"
-                    style={[styles.nextClassChip, { backgroundColor: getColorByTipo(proximaClase.clase.tipo) }]}
-                    textStyle={{ color: 'white', fontSize: 12, fontWeight: '600' }}
-                  >
-                    {proximaClase.clase.tipo.charAt(0).toUpperCase() + proximaClase.clase.tipo.slice(1)}
-                  </Chip>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.noClassContainer}>
-                <IconButton
-                  icon="calendar-remove"
-                  size={32}
-                  iconColor={theme.colors.onSurfaceVariant}
-                />
-                <Text style={[styles.noClassText, { color: theme.colors.onSurfaceVariant }]}>
-                  No hay clases programadas
-                </Text>
-                <Text style={[styles.noClassSubtext, { color: theme.colors.onSurfaceVariant }]}>
-                  Ve a la sección de clases para reservar
-                </Text>
-              </View>
-            )}
-          </Surface>
 
-        </View>
-      </ScrollView>
+            {/* Mis Reservas - Derecha */}
+            <View style={styles.rightColumn}>
+              <TouchableOpacity 
+                style={[styles.reservasCard, { backgroundColor: theme.colors.primary }]}
+                onPress={handleNavigateToReservas}
+                activeOpacity={0.8}
+              >
+                <View style={styles.reservasContent}>
+                  <View style={styles.reservasTextContainer}>
+                    <Text style={styles.reservasTitle}>Mis <Text style={{color: 'orange', fontSize: 28, fontWeight: 'bold'}}>Reservas</Text></Text>
+                    <Text style={styles.reservasSubtitle}>
+                      {state.isLoading ? 'Cargando...' : `${reservasActivas.length} reservas activas`}
+                    </Text>
+                    <View style={styles.reservasBadgeContainer}>
+                      <View style={styles.reservasBadge}>
+                        <Text style={styles.reservasBadgeText}>
+                          {state.isLoading ? '...' : reservasActivas.length}
+                        </Text>
+                      </View>
+                      <IconButton
+                        icon="calendar-check"
+                        size={16}
+                        iconColor="white"
+                        style={styles.reservasTrendIcon}
+                      />
+                    </View>
+                  </View>
+                  
+                  
+                </View>
+                             </TouchableOpacity>
+             </View>
+           </View>
+         </View>
+       </ScrollView>
     </SafeAreaView>
   );
 };
@@ -226,12 +306,23 @@ const styles = StyleSheet.create({
 
   // Stats Grid
   statsGrid: {
+    marginBottom: 20,
+  },
+  
+  // Bottom Grid - Dos columnas
+  bottomGrid: {
     flexDirection: 'row',
     gap: 12,
     marginBottom: 20,
   },
+  leftColumn: {
+    flex: 0.5,
+  },
+  rightColumn: {
+    flex: 0.5,
+  },
   statCard: {
-    flex: 1,
+    flex: 0.5,
     borderRadius: 16,
     padding: 16,
   },
@@ -254,6 +345,9 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     opacity: 0.7,
+  },
+  statLoading: {
+    marginLeft: 8,
   },
 
   // Next Class Section
@@ -315,6 +409,290 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     textAlign: 'center',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+  },
+
+  // Nuevo indicador de clases con estilo mejorado
+  workoutCard: {
+    backgroundColor: '#FFE95C',
+    borderRadius: 20,
+    overflow: 'hidden', // Para que la imagen se salga del contenedor
+    padding: 20,
+    position: 'relative',
+    minHeight: 140,
+  },
+  workoutContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  workoutTextContainer: {
+    flex: 1,
+    zIndex: 2,
+  },
+  workoutLabel: {
+    fontSize: 12,
+    color: 'gray',
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  workoutTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'black',
+    marginBottom: 4,
+  },
+  workoutSubtitle: {
+    fontSize: 14,
+    color: 'orange',
+    marginBottom: 12,
+  },
+  caloriesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  caloriesBadge: {
+    backgroundColor: '#000',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  caloriesText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  trendIcon: {
+    backgroundColor: '#000',
+    borderRadius: 8,
+    margin: 0,
+  },
+  imageContainer: {
+    position: 'relative',
+    width: 160,
+    height: 160,
+    overflow: 'hidden',
+    marginRight: -50, // Para que se salga más del contenedor
+    marginTop: -30,
+    marginBottom: -47,
+  },
+  workoutImage: {
+    width: '100%',
+    height: '100%',
+  },
+  backgroundCircles: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  circle: {
+    position: 'absolute',
+    borderRadius: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  circle1: {
+    width: 80,
+    height: 80,
+    top: -10,
+    right: 20,
+  },
+  circle2: {
+    width: 60,
+    height: 60,
+    bottom: 10,
+    right: 60,
+  },
+  circle3: {
+    width: 40,
+    height: 40,
+    top: 30,
+    right: 40,
+  },
+  progressContainer: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  progressCircle: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 23,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  progressText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+
+  // Nuevo indicador de reservas con estilo mejorado
+  reservasCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    padding: 20,
+    position: 'relative',
+    minHeight: 50,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  reservasContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  reservasTextContainer: {
+    flex: 1,
+    zIndex: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reservasLabel: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 8,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  reservasNumber: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  reservasAction: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  // Nuevo indicador de reservas con estilo mejorado (nuevo)
+  reservasContainer: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  reservasTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  reservasSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 12,
+  },
+  reservasBadgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reservasBadge: {
+    backgroundColor: '#000',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  reservasBadgeText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  reservasTrendIcon: {
+    backgroundColor: '#000',
+    borderRadius: 8,
+    margin: 0,
+  },
+  reservasImageContainer: {
+    position: 'relative',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+    marginLeft: -20, // Para que se salga del contenedor
+    marginTop: -10,
+  },
+  reservasIcon: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reservasBackgroundCircles: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  reservasCircle: {
+    position: 'absolute',
+    borderRadius: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  reservasCircle1: {
+    width: 80,
+    height: 80,
+    top: -10,
+    right: 20,
+  },
+  reservasCircle2: {
+    width: 60,
+    height: 60,
+    bottom: 10,
+    right: 60,
+  },
+  reservasCircle3: {
+    width: 40,
+    height: 40,
+    top: 30,
+    right: 40,
+  },
+
 });
 
 export default HomeScreen;

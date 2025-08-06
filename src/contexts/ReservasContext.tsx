@@ -1,14 +1,13 @@
-import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useReducer } from 'react';
+import { reservaService } from '../services/reservaService';
 import {
   Clase,
-  ReservaConClase,
   ClaseCardData,
-  ReservaCardData,
-  ReservaError,
-  TipoClase,
   EstadoReserva,
+  ReservaCardData,
+  ReservaConClase
 } from '../types/reservas';
-import { reservaService } from '../services/reservaService';
+import { useAuthStore } from './authStore';
 
 // Estado del contexto
 interface ReservasState {
@@ -249,11 +248,34 @@ interface ReservasProviderProps {
 
 export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(reservasReducer, initialState);
+  const { user, isAuthenticated } = useAuthStore();
 
-
+  // Cargar datos automáticamente cuando el usuario esté autenticado
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const loadInitialData = async () => {
+        try {
+          await Promise.all([fetchClases(), fetchReservas()]);
+        } catch (error) {
+          console.warn('Error cargando datos iniciales:', error);
+        }
+      };
+      
+      loadInitialData();
+    } else {
+      // Limpiar datos cuando no hay usuario autenticado
+      dispatch({ type: 'SET_CLASES', payload: [] });
+      dispatch({ type: 'SET_RESERVAS', payload: [] });
+    }
+  }, [isAuthenticated, user?.id]);
 
   // Acciones de datos
   const fetchClases = useCallback(async () => {
+    if (!isAuthenticated || !user) {
+      console.warn('No se pueden cargar clases: usuario no autenticado');
+      return;
+    }
+
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'CLEAR_ERROR' });
     
@@ -270,9 +292,14 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, []);
+  }, [isAuthenticated, user]);
 
   const fetchReservas = useCallback(async () => {
+    if (!isAuthenticated || !user) {
+      console.warn('No se pueden cargar reservas: usuario no autenticado');
+      return;
+    }
+
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'CLEAR_ERROR' });
     
@@ -289,9 +316,14 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, []);
+  }, [isAuthenticated, user]);
 
   const reservarClase = useCallback(async (claseId: string): Promise<boolean> => {
+    if (!isAuthenticated || !user) {
+      console.warn('No se puede reservar clase: usuario no autenticado');
+      return false;
+    }
+
     dispatch({ type: 'SET_RESERVING', payload: true });
     dispatch({ type: 'CLEAR_ERROR' });
     
@@ -325,9 +357,14 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
     } finally {
       dispatch({ type: 'SET_RESERVING', payload: false });
     }
-  }, [state.clases]);
+  }, [state.clases, isAuthenticated, user]);
 
   const cancelarReserva = useCallback(async (claseId: string): Promise<boolean> => {
+    if (!isAuthenticated || !user) {
+      console.warn('No se puede cancelar reserva: usuario no autenticado');
+      return false;
+    }
+
     dispatch({ type: 'SET_CANCELING', payload: true });
     dispatch({ type: 'CLEAR_ERROR' });
     
@@ -347,7 +384,7 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
     } finally {
       dispatch({ type: 'SET_CANCELING', payload: false });
     }
-  }, []);
+  }, [isAuthenticated, user]);
 
   // Acciones de UI
   const setSearchTerm = useCallback((term: string) => {
