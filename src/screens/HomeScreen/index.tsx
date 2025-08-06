@@ -1,5 +1,3 @@
-import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { Text, Card, Button, Surface, useTheme, Chip, IconButton, Avatar } from 'react-native-paper';
@@ -9,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../../contexts/authStore';
 import { useReservas } from '../../contexts/ReservasContext';
+import CustomHeader from '../../components/CustomHeader';
 import { calcularProximaClase, getProximaClaseTexto, NextClassInfo } from '../../utils/nextClassCalculator';
 import testNextClassCalculator from '../../utils/nextClassCalculator.test';
 
@@ -73,8 +72,6 @@ const HomeScreen: React.FC = () => {
     return colores[tipo] || '#666666';
   };
 
-
-
   // Calcular la próxima clase cuando cambien los datos
   useEffect(() => {
     if (state.clases && state.reservas) {
@@ -96,8 +93,6 @@ const HomeScreen: React.FC = () => {
     // Aquí puedes navegar a las notificaciones
   };
 
-
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar style={theme.dark ? "light" : "dark"} backgroundColor={theme.colors.surface} />
@@ -111,10 +106,10 @@ const HomeScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-                 {/* Content */}
-         <View style={styles.content}>
-           
-           {/* Quick Stats Grid */}
+        {/* Content */}
+        <View style={styles.content}>
+          
+          {/* Quick Stats Grid */}
           <View style={styles.statsGrid}>
             <Surface style={[styles.statCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
               <View style={styles.statContent}>
@@ -211,8 +206,6 @@ const HomeScreen: React.FC = () => {
             )}
           </Surface>
 
-          
-
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -230,8 +223,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  
-  
 
   // Stats Grid
   statsGrid: {
@@ -324,8 +315,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     textAlign: 'center',
   },
-
-  
 });
 
 export default HomeScreen;
