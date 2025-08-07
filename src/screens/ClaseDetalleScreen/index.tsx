@@ -4,8 +4,6 @@ import { FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-na
 import {
   ActivityIndicator,
   Button,
-  Card,
-  Chip,
   FAB,
   Searchbar,
   Snackbar,
@@ -147,97 +145,133 @@ const ClaseDetalleScreen: React.FC = () => {
     const colorTipo = getColorByTipo(clase.tipo);
     
     return (
-      <Card style={[styles.claseCard, { backgroundColor: theme.colors.surface }]} elevation={3}>
-        <Card.Content>
-          {/* Header con tipo y estado */}
-          <View style={styles.claseHeader}>
-            <View style={styles.tipoContainer}>
-              <Text style={styles.claseEmoji}>
-                {getEmojiByTipo(clase.tipo)}
-              </Text>
-              <Chip 
-                mode="flat"
-                style={[styles.tipoChip, { backgroundColor: colorTipo }]}
-                textStyle={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}
-              >
+      <View style={[styles.claseCard, { backgroundColor: theme.colors.surface }]}>
+                 {/* Sección Superior - Gradiente */}
+         <View style={[
+           styles.topSection, 
+           { 
+             backgroundColor: theme.dark ? '#2C2C2C' : '#FFFFFF',
+           }
+         ]}>
+          {/* Badges superiores */}
+          <View style={styles.badgesContainer}>
+            <View style={[styles.badge, { backgroundColor: colorTipo }]}>
+              <Text style={styles.badgeText}>
                 {clase.tipo.charAt(0).toUpperCase() + clase.tipo.slice(1)}
-              </Chip>
+              </Text>
             </View>
-            
-            <Chip
-              mode="flat"
+                         <View style={[styles.badge, { backgroundColor: theme.dark ? '#FFAF2E' : '#E0E0E0' }]}>
+               <Text style={[styles.badgeText, { color: theme.dark ? 'black' : 'rgba(0, 0, 0, 0.7)' }]}>
+                 Alta Intensidad
+               </Text>
+             </View>
+          </View>
+
+                     {/* Círculo central con placeholder de foto */}
+           <View style={[
+             styles.circleContainer,
+             { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)' }
+           ]}>
+             <View style={styles.photoPlaceholder}>
+               <Text style={styles.photoPlaceholderText}>
+                 📷
+               </Text>
+               <Text style={styles.photoPlaceholderSubtext}>
+                 Foto no disponible
+               </Text>
+             </View>
+            {/* Círculos de fondo para efecto dinámico */}
+            <View style={styles.backgroundCircles}>
+              <View style={[
+                styles.circle, 
+                styles.circle1, 
+                { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)' }
+              ]} />
+              <View style={[
+                styles.circle, 
+                styles.circle2, 
+                { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.2)' }
+              ]} />
+              <View style={[
+                styles.circle, 
+                styles.circle3, 
+                { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.15)' }
+              ]} />
+            </View>
+          </View>
+        </View>
+
+                 {/* Sección Inferior - Información */}
+         <View style={[
+           styles.bottomSection, 
+           { 
+             backgroundColor: theme.dark ? '#1A1A1A' : '#F5F5F5'
+           }
+         ]}>
+                     {/* Título */}
+           <Text style={[
+             styles.claseTitle, 
+             { color: theme.dark ? 'white' : 'black' }
+           ]}>
+             {clase.nombre}
+           </Text>
+
+           {/* Descripción */}
+           <Text style={[
+             styles.claseDescription, 
+             { color: theme.dark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.6)' }
+           ]}>
+             {clase.descripcion}
+           </Text>
+
+          {/* Detalles */}
+          <View style={styles.detailsContainer}>
+                         {/* Horario */}
+             <View style={styles.detailRow}>
+               <Text style={[styles.detailIcon, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>🕐</Text>
+               <Text style={[styles.detailText, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>
+                 {clase.horario} • {clase.duracion} min
+               </Text>
+             </View>
+
+             {/* Profesor y cupo */}
+             <View style={styles.detailRow}>
+               <Text style={[styles.detailIcon, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>👥</Text>
+               <Text style={[styles.detailText, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>
+                 {clase.profesor} • {clase.cupo || 12}/{clase.cupo || 12} cupos
+               </Text>
+             </View>
+
+             {/* Días */}
+             <View style={styles.detailRow}>
+               <Text style={[styles.detailIcon, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>📅</Text>
+               <Text style={[styles.detailText, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>
+                 {formatDias(clase.dias)}
+               </Text>
+             </View>
+          </View>
+
+          {/* Botón de reserva */}
+          <View style={styles.buttonContainer}>
+            <Button
+              mode="contained"
+              onPress={() => handleReservaToggle(clase)}
+              loading={state.isReserving || state.isCanceling}
+              disabled={state.isReserving || state.isCanceling}
               style={[
-                styles.tipoChip,
-                isReservada ? styles.reservadoChip : styles.disponibleChip
+                styles.reservaButton,
+                { 
+                  backgroundColor: isReservada ? '#F54927' : '#7DE34D',
+                  borderRadius: 12,
+                }
               ]}
-              textStyle={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}
+              labelStyle={styles.buttonLabel}
             >
-              {isReservada ? '✓ Reservada' : '○ Disponible'}
-            </Chip>
+              {isReservada ? 'Cancelar Reserva' : 'Reservar Clase'}
+            </Button>
           </View>
-
-          {/* Información de la clase */}
-          <Text style={[styles.claseNombre, { color: theme.colors.onSurface }]}>
-            {clase.nombre}
-          </Text>
-          
-          <Text style={[styles.claseDescripcion, { color: theme.colors.onSurfaceVariant }]}>
-            {clase.descripcion}
-          </Text>
-
-          {/* Detalles mejorados */}
-          <View style={styles.detallesContainer}>
-            <View style={styles.detalleRow}>
-              <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>👨‍🏫</Text>
-              <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant, fontWeight: '500' }]}>
-                {clase.profesor}
-              </Text>
-            </View>
-            
-            <View style={styles.detalleRow}>
-              <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>⏰</Text>
-              <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant }]}>
-                {clase.horario} • {clase.duracion} min
-              </Text>
-            </View>
-            
-            <View style={styles.detalleRow}>
-              <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>📅</Text>
-              <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant }]}>
-                {formatDias(clase.dias)}
-              </Text>
-            </View>
-
-            {clase.cupo && (
-              <View style={styles.detalleRow}>
-                <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>👥</Text>
-                <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant }]}>
-                  Cupo: {clase.cupo} personas
-                </Text>
-              </View>
-            )}
-          </View>
-        </Card.Content>
-
-        {/* Botón de acción mejorado */}
-        <Card.Actions style={styles.cardActions}>
-          <Button
-            mode={isReservada ? 'outlined' : 'contained'}
-            onPress={() => handleReservaToggle(clase)}
-            loading={state.isReserving || state.isCanceling}
-            disabled={state.isReserving || state.isCanceling}
-            icon={isReservada ? 'close' : 'check'}
-            style={[
-              styles.reservaButton,
-              isReservada && { borderColor: theme.colors.error }
-            ]}
-            buttonColor={isReservada ? undefined : theme.colors.primary}
-            textColor={isReservada ? theme.colors.error : 'white'}
-          >
-            {isReservada ? 'Cancelar Reserva' : 'Reservar Clase'}
-          </Button>
-        </Card.Actions>
-      </Card>
+        </View>
+      </View>
     );
   };
 
@@ -263,25 +297,41 @@ const ClaseDetalleScreen: React.FC = () => {
           style={styles.searchbar}
         />
 
-        {/* Filtros por tipo */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.filtrosContainer}
-          contentContainerStyle={styles.filtrosContent}
-        >
-          {tiposDisponibles.map((tipo) => (
-            <Chip
-              key={tipo.value}
-              mode={state.selectedTipo === tipo.value ? 'flat' : 'outlined'}
-              selected={state.selectedTipo === tipo.value}
-              onPress={() => setSelectedTipo(tipo.value === 'todos' ? null : tipo.value)}
-              style={styles.filtroChip}
-            >
-              {tipo.label}
-            </Chip>
-          ))}
-        </ScrollView>
+                 {/* Filtros por tipo */}
+         <View style={styles.filtrosContainer}>
+           <ScrollView 
+             horizontal 
+             showsHorizontalScrollIndicator={false}
+             contentContainerStyle={styles.filtrosContent}
+           >
+             {tiposDisponibles.map((tipo) => (
+                                <View
+                   key={tipo.value}
+                   style={[
+                     styles.filtroCard,
+                     { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' },
+                     state.selectedTipo === tipo.value && {
+                       backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'
+                     }
+                   ]}
+                 >
+                   <Text
+                     style={[
+                       styles.filtroText,
+                       { color: theme.dark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)' },
+                       state.selectedTipo === tipo.value && {
+                         color: theme.dark ? 'white' : 'black',
+                         fontWeight: 'bold'
+                       }
+                     ]}
+                     onPress={() => setSelectedTipo(tipo.value === 'todos' ? null : tipo.value)}
+                   >
+                     {tipo.label}
+                   </Text>
+                 </View>
+             ))}
+           </ScrollView>
+         </View>
 
         {/* Lista de clases */}
         {state.isLoading ? (
@@ -360,9 +410,17 @@ const styles = StyleSheet.create({
   filtrosContent: {
     paddingHorizontal: 4,
   },
-  filtroChip: {
+  filtroCard: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     marginRight: 8,
-    marginVertical: 4,
+    borderRadius: 20,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  filtroText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   loadingContainer: {
     flex: 1,
@@ -381,69 +439,152 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 16,
     marginHorizontal: 4,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  claseHeader: {
+  topSection: {
+    padding: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    alignItems: 'center',
+    position: 'relative',
+    minHeight: 180,
+    justifyContent: 'center',
+  },
+  badgesContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 15,
+  },
+  badge: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 15,
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'center',
   },
-  tipoContainer: {
-    flexDirection: 'row',
+  badgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  circleContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
     alignItems: 'center',
-    flex: 1,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  claseEmoji: {
-    fontSize: 24,
-    marginRight: 8,
+  mainCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
   },
-  tipoChip: {
-    borderRadius: 20,
+  photoPlaceholder: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
-  reservadoChip: {
-    backgroundColor: '#4CAF50',
+  photoPlaceholderText: {
+    fontSize: 32,
+    marginBottom: 8,
   },
-  disponibleChip: {
-    borderColor: '#2196F3',
+  photoPlaceholderSubtext: {
+    fontSize: 10,
+    color: 'rgba(0, 0, 0, 0.6)',
+    textAlign: 'center',
+    fontWeight: '500',
   },
-  claseNombre: {
+  backgroundCircles: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    top: 0,
+    left: 0,
+  },
+  circle: {
+    position: 'absolute',
+    borderRadius: 50,
+  },
+  circle1: {
+    width: 100,
+    height: 100,
+    top: -20,
+    left: -20,
+  },
+  circle2: {
+    width: 150,
+    height: 150,
+    bottom: -30,
+    right: -30,
+  },
+  circle3: {
+    width: 200,
+    height: 200,
+    top: 50,
+    left: 50,
+  },
+  bottomSection: {
+    padding: 20,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    paddingTop: 15,
+  },
+  claseTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 12,
-    marginTop: 8,
+    marginBottom: 8,
   },
-  claseDescripcion: {
+  claseDescription: {
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 20,
     opacity: 0.8,
   },
-  detallesContainer: {
+  detailsContainer: {
     gap: 12,
-    marginTop: 8,
+    marginBottom: 20,
   },
-  detalleRow: {
+  detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  detalleIcon: {
+  detailIcon: {
     fontSize: 18,
     marginRight: 12,
     width: 24,
   },
-  detalleTexto: {
+  detailText: {
     fontSize: 15,
     flex: 1,
   },
-  cardActions: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: 8,
+  buttonContainer: {
+    alignItems: 'center',
   },
   reservaButton: {
-    flex: 1,
-    borderRadius: 12,
+    width: '100%',
     height: 48,
+    borderRadius: 12,
+  },
+  buttonLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   emptyContainer: {
     flex: 1,

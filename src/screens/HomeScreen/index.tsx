@@ -99,6 +99,31 @@ const HomeScreen: React.FC = () => {
   // Obtener reservas activas para el indicador
   const reservasActivas = getReservasActivas();
 
+  // Calcular progreso mensual
+  const calcularProgresoMensual = () => {
+    if (!state.reservas || state.reservas.length === 0) {
+      return { clasesCompletadas: 0, porcentaje: 0 };
+    }
+
+    const ahora = new Date();
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    const finMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0);
+
+    // Filtrar reservas del mes actual que ya pasaron
+    const clasesCompletadas = state.reservas.filter(reserva => {
+      const fechaReserva = new Date(reserva.fecha);
+      return fechaReserva >= inicioMes && fechaReserva <= finMes && fechaReserva < ahora;
+    }).length;
+
+    // Meta mensual (puedes ajustar según tus necesidades)
+    const metaMensual = 16; // 4 clases por semana
+    const porcentaje = Math.min(Math.round((clasesCompletadas / metaMensual) * 100), 100);
+
+    return { clasesCompletadas, porcentaje };
+  };
+
+  const progresoMensual = calcularProgresoMensual();
+
   const handleLogout = async () => {
     await logout();
     // Navegación explícita como respaldo
@@ -120,6 +145,13 @@ const HomeScreen: React.FC = () => {
   // Navegar a clases
   const handleNavigateToClases = () => {
     router.push('/clases');
+  };
+
+  // Navegar a progreso detallado
+  const handleNavigateToProgress = () => {
+    // Aquí puedes navegar a una pantalla de progreso detallado
+    // Por ahora solo mostrará un console.log
+    console.log('Navegar a progreso detallado');
   };
 
   // Mostrar loading si no hay datos y está cargando
@@ -169,6 +201,9 @@ const HomeScreen: React.FC = () => {
               style={[styles.workoutCard, { backgroundColor: '#FFE95C' }]}
               onPress={handleNavigateToClases}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Ver clases disponibles"
+              accessibilityHint="Toca para ver todas las clases disponibles y anotarte"
             >
               <View style={styles.workoutContent}>
                 <View style={styles.workoutTextContainer}>
@@ -184,9 +219,10 @@ const HomeScreen: React.FC = () => {
                     </View>
                     <IconButton
                       icon="trending-up"
-                      size={16}
+                      size={24}
                       iconColor="white"
                       style={styles.trendIcon}
+                      accessibilityLabel="Icono de tendencia ascendente"
                     />
                   </View>
                 </View>
@@ -197,6 +233,7 @@ const HomeScreen: React.FC = () => {
                     source={require('../../../assets/images/aguchin.png')}
                     style={styles.workoutImage}
                     resizeMode="cover"
+                    accessibilityLabel="Ilustración de persona haciendo ejercicio"
                   />
                   {/* Círculos de fondo para efecto dinámico */}
                   <View style={styles.backgroundCircles}>
@@ -214,13 +251,18 @@ const HomeScreen: React.FC = () => {
                          {/* Próxima Clase - Izquierda */}
              <View style={styles.leftColumn}>
                <TouchableOpacity 
-                 style={[styles.nextClassCard, { backgroundColor: '#222222' }]}
+                 style={[styles.nextClassCard, { backgroundColor: theme.colors.surface }]}
                  activeOpacity={0.8}
+                 accessibilityRole="button"
+                 accessibilityLabel="Próxima clase programada"
+                 accessibilityHint="Toca para ver detalles de tu próxima clase"
                >
                  <View style={styles.nextClassContent}>
                    <View style={styles.nextClassTextContainer}>
-                     <Text style={styles.nextClassTitle}>Próxima <Text style={{color: '#f6e7c5', fontSize: 20, fontWeight: 'bold'}}>Clase</Text></Text>
-                     <Text style={styles.nextClassSubtitle}>
+                     <Text style={[styles.nextClassTitle, { color: theme.dark ? 'white' : 'black' }]}>
+                       Próxima <Text style={{color: theme.dark ? '#f6e7c5' : '#FFAF2E', fontSize: 20, fontWeight: 'bold'}}>Clase</Text>
+                     </Text>
+                     <Text style={[styles.nextClassSubtitle, { color: theme.dark ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)' }]}>
                        {proximaClase ? proximaClase.clase.nombre : 'No hay clases programadas'}
                      </Text>
                      <View style={styles.nextClassBadgeContainer}>
@@ -231,9 +273,10 @@ const HomeScreen: React.FC = () => {
                        </View>
                        <IconButton
                          icon="clock-outline"
-                         size={16}
+                         size={24}
                          iconColor="white"
                          style={styles.nextClassTrendIcon}
+                         accessibilityLabel="Icono de reloj"
                        />
                      </View>
                    </View>
@@ -243,14 +286,27 @@ const HomeScreen: React.FC = () => {
                      <IconButton
                        icon="calendar-clock"
                        size={50}
-                       iconColor="rgba(246, 231, 197, 0.9)"
+                       iconColor={theme.dark ? "rgba(246, 231, 197, 0.9)" : "rgba(255, 175, 46, 0.9)"}
                        style={styles.nextClassIcon}
+                       accessibilityLabel="Icono de calendario con reloj"
                      />
                      {/* Círculos de fondo para efecto dinámico */}
                      <View style={styles.nextClassBackgroundCircles}>
-                       <View style={[styles.nextClassCircle, styles.nextClassCircle1]} />
-                       <View style={[styles.nextClassCircle, styles.nextClassCircle2]} />
-                       <View style={[styles.nextClassCircle, styles.nextClassCircle3]} />
+                       <View style={[
+                         styles.nextClassCircle, 
+                         styles.nextClassCircle1, 
+                         { backgroundColor: theme.dark ? 'rgba(246, 231, 197, 0.15)' : 'rgba(255, 175, 46, 0.15)' }
+                       ]} />
+                       <View style={[
+                         styles.nextClassCircle, 
+                         styles.nextClassCircle2, 
+                         { backgroundColor: theme.dark ? 'rgba(246, 231, 197, 0.15)' : 'rgba(255, 175, 46, 0.15)' }
+                       ]} />
+                       <View style={[
+                         styles.nextClassCircle, 
+                         styles.nextClassCircle3, 
+                         { backgroundColor: theme.dark ? 'rgba(246, 231, 197, 0.15)' : 'rgba(255, 175, 46, 0.15)' }
+                       ]} />
                      </View>
                    </View>
                  </View>
@@ -263,6 +319,9 @@ const HomeScreen: React.FC = () => {
                 style={[styles.reservasCard, { backgroundColor: '#FFAF2E' }]}
                 onPress={handleNavigateToReservas}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Mis reservas activas"
+                accessibilityHint="Toca para ver y gestionar tus reservas activas"
               >
                 <View style={styles.reservasContent}>
                   <View style={styles.reservasTextContainer}>
@@ -278,18 +337,49 @@ const HomeScreen: React.FC = () => {
                       </View>
                       <IconButton
                         icon="calendar-check"
-                        size={16}
+                        size={24}
                         iconColor="white"
                         style={styles.reservasTrendIcon}
+                        accessibilityLabel="Icono de calendario con check"
                       />
                     </View>
                   </View>                  
                 </View>
                              </TouchableOpacity>
              </View>
-           </View>
-         </View>
-       </ScrollView>
+                       </View>
+          </View>
+
+          {/* Indicador de Progreso Mensual */}
+          <View style={styles.progressSection}>
+            <TouchableOpacity 
+              style={[styles.progressCard, { backgroundColor: '#FFAF2E' }]}
+              onPress={handleNavigateToProgress}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Progreso mensual de clases"
+              accessibilityHint="Toca para ver detalles de tu progreso mensual"
+            >
+              <View style={styles.progressContent}>
+                <View style={styles.progressTextContainer}>
+                  <Text style={styles.progressTitle}>Progreso Mensual</Text>
+                  <Text style={styles.progressSubtitle}>
+                    {state.isLoading ? 'Cargando...' : `${progresoMensual.clasesCompletadas} clases completadas`}
+                  </Text>
+                </View>
+                
+                <View style={styles.progressRightSection}>
+                  <Text style={styles.progressPercentage}>{progresoMensual.porcentaje}%</Text>
+                  <View style={styles.progressBarContainer}>
+                    <View style={styles.progressBar}>
+                      <View style={[styles.progressBarFill, { width: `${progresoMensual.porcentaje}%` }]} />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
     </SafeAreaView>
   );
 };
@@ -315,7 +405,7 @@ const styles = StyleSheet.create({
   bottomGrid: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 20,
+    marginBottom: 8, // Reducido para que el indicador de progreso esté más cerca
   },
   leftColumn: {
     flex: 0.5,
@@ -357,9 +447,17 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginTop: 0,
     padding: 20,
-    minHeight: 172.5,
+    minHeight: 172.5, // Altura mínima que se puede expandir según el contenido
     overflow: 'hidden',
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
   },
   nextClassHeader: {
     flexDirection: 'row',
@@ -375,6 +473,8 @@ const styles = StyleSheet.create({
   nextClassTextContainer: {
     flex: 1,
     zIndex: 2,
+    justifyContent: 'flex-start', // Cambiado para mejor distribución del contenido
+    paddingVertical: 5,
   },
   nextClassTitle: {
     fontSize: 24,
@@ -383,9 +483,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   nextClassSubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 12,
+    marginBottom: 8,
+    flexWrap: 'wrap', // Permite que el texto se ajuste
   },
   nextClassBadgeContainer: {
     flexDirection: 'row',
@@ -394,9 +495,11 @@ const styles = StyleSheet.create({
   nextClassBadge: {
     backgroundColor: '#000',
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     marginRight: 8,
+    minHeight: 48,
+    justifyContent: 'center',
   },
   nextClassBadgeText: {
     color: 'white',
@@ -407,6 +510,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     borderRadius: 8,
     margin: 0,
+    minWidth: 48,
+    minHeight: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   nextClassImageContainer: {
     position: 'relative',
@@ -437,7 +544,7 @@ const styles = StyleSheet.create({
   nextClassCircle: {
     position: 'absolute',
     borderRadius: 50,
-    backgroundColor: 'rgba(246, 231, 197, 0.15)',
+    backgroundColor: 'rgba(246, 231, 197, 0.15)', // Se mantiene para tema oscuro
   },
   nextClassCircle1: {
     width: 80,
@@ -532,7 +639,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   workoutSubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: 'orange',
     marginBottom: 12,
   },
@@ -543,9 +650,11 @@ const styles = StyleSheet.create({
   caloriesBadge: {
     backgroundColor: '#000',
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     marginRight: 8,
+    minHeight: 48,
+    justifyContent: 'center',
   },
   caloriesText: {
     color: 'white',
@@ -556,6 +665,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     borderRadius: 8,
     margin: 0,
+    minWidth: 48,
+    minHeight: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   imageContainer: {
     position: 'relative',
@@ -641,7 +754,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     padding: 20,
     position: 'relative',
-    minHeight: 50,
+    minHeight: 172.5, // Altura mínima que se puede expandir según el contenido
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -661,7 +774,8 @@ const styles = StyleSheet.create({
     flex: 1,
     zIndex: 2,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // Cambiado para mejor distribución del contenido
+    paddingVertical: 5,
   },
   reservasLabel: {
     fontSize: 14,
@@ -697,9 +811,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   reservasSubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 12,
+    marginBottom: 8,
+    textAlign: 'center',
+    flexWrap: 'wrap', // Permite que el texto se ajuste
   },
   reservasBadgeContainer: {
     flexDirection: 'row',
@@ -709,9 +825,11 @@ const styles = StyleSheet.create({
   reservasBadge: {
     backgroundColor: '#000',
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     marginRight: 8,
+    minHeight: 48,
+    justifyContent: 'center',
   },
   reservasBadgeText: {
     color: 'white',
@@ -722,6 +840,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     borderRadius: 8,
     margin: 0,
+    minWidth: 48,
+    minHeight: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   reservasImageContainer: {
     position: 'relative',
@@ -771,6 +893,78 @@ const styles = StyleSheet.create({
     height: 40,
     top: 30,
     right: 40,
+  },
+
+  // Indicador de Progreso Mensual
+  progressSection: {
+    marginTop: 8, // Reducido para que esté más cerca de los dos indicadores del grid
+    marginBottom: 20,
+    marginLeft: 10,
+    marginRight: 10,
+  },
+  progressCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    padding: 20,
+    position: 'relative',
+    minHeight: 100,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  progressContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  progressTextContainer: {
+    flex: 1,
+    zIndex: 2,
+  },
+  progressTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'black',
+    marginBottom: 4,
+  },
+  progressSubtitle: {
+    fontSize: 16,
+    color: 'rgba(0, 0, 0, 0.7)',
+    marginBottom: 8,
+  },
+  progressRightSection: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  progressPercentage: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: 'black',
+    marginBottom: 8,
+  },
+  progressBarContainer: {
+    width: 120,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    overflow: 'hidden',
+  },
+  progressBar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: 'black',
+    borderRadius: 4,
   },
 
 });

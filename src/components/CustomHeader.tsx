@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text, IconButton, useTheme } from 'react-native-paper';
+import { StyleSheet, View } from 'react-native';
+import { IconButton, Text, useTheme } from 'react-native-paper';
 import { SvgXml } from 'react-native-svg';
 import { useAuthStore } from '../contexts/authStore';
 
@@ -61,10 +61,12 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
         {/* Icono de notificaciones */}
         <IconButton
           icon="bell-outline"
-          size={24}
+          size={28}
           iconColor={theme.colors.onSurfaceVariant}
           onPress={onBellPress}
           style={styles.iconButton}
+          accessibilityLabel="Notificaciones"
+          accessibilityHint="Toca para ver tus notificaciones"
         />
       </View>
     </View>
@@ -85,9 +87,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   logoCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -117,6 +119,10 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     marginLeft: 4,
+    minWidth: 48,
+    minHeight: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
