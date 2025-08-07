@@ -2,12 +2,12 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dimensions, Image, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ActivityIndicator, Chip, IconButton, Surface, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, IconButton, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomHeader from '../../components/CustomHeader';
 import { useAuthStore } from '../../contexts/authStore';
 import { useReservas } from '../../contexts/ReservasContext';
-import { calcularProximaClase, getProximaClaseTexto, NextClassInfo } from '../../utils/nextClassCalculator';
+import { calcularProximaClase, NextClassInfo } from '../../utils/nextClassCalculator';
 import testNextClassCalculator from '../../utils/nextClassCalculator.test';
 
 const { width } = Dimensions.get('window');
@@ -211,58 +211,62 @@ const HomeScreen: React.FC = () => {
 
           {/* Grid de dos columnas: Próxima Clase y Mis Reservas */}
           <View style={styles.bottomGrid}>
-            {/* Próxima Clase - Izquierda */}
-            <View style={styles.leftColumn}>
-              <Surface style={[styles.nextClassCard, { backgroundColor: theme.colors.surface }]} elevation={2}>
-                <View style={styles.nextClassHeader}>
-                  <Text style={[styles.nextClassTitle, { color: theme.colors.onSurface }]}>
-                    Próxima Clase
-                  </Text>
-                </View>
-                
-                {proximaClase ? (
-                  <View style={styles.nextClassContent}>
-                    <View style={styles.nextClassIconContainer}>
-                    </View>
-                    <View style={styles.nextClassDetails}>
-                      <Text style={[styles.nextClassName, { color: theme.colors.onSurface }]}>
-                        {proximaClase.clase.nombre}
-                      </Text>
-                      <Text style={[styles.nextClassTime, { color: theme.colors.onSurfaceVariant }]}>
-                        {getProximaClaseTexto(proximaClase)}
-                      </Text>
-                      <Chip 
-                        mode="flat"
-                        style={[styles.nextClassChip, { backgroundColor: getColorByTipo(proximaClase.clase.tipo) }]}
-                        textStyle={{ color: 'white', fontSize: 12, fontWeight: '600' }}
-                      >
-                        {proximaClase.clase.tipo.charAt(0).toUpperCase() + proximaClase.clase.tipo.slice(1)}
-                      </Chip>
-                    </View>
-                  </View>
-                ) : (
-                  <View style={styles.noClassContainer}>
-                    <Text style={[styles.noClassText, { color: theme.colors.onSurfaceVariant }]}>
-                      No hay clases programadas
-                    </Text>
-                    <Text style={[styles.noClassSubtext, { color: theme.colors.onSurfaceVariant }]}>
-                      Ve a la sección de clases para reservar
-                    </Text>
-                  </View>
-                )}
-              </Surface>
-            </View>
+                         {/* Próxima Clase - Izquierda */}
+             <View style={styles.leftColumn}>
+               <TouchableOpacity 
+                 style={[styles.nextClassCard, { backgroundColor: '#222222' }]}
+                 activeOpacity={0.8}
+               >
+                 <View style={styles.nextClassContent}>
+                   <View style={styles.nextClassTextContainer}>
+                     <Text style={styles.nextClassTitle}>Próxima <Text style={{color: '#f6e7c5', fontSize: 20, fontWeight: 'bold'}}>Clase</Text></Text>
+                     <Text style={styles.nextClassSubtitle}>
+                       {proximaClase ? proximaClase.clase.nombre : 'No hay clases programadas'}
+                     </Text>
+                     <View style={styles.nextClassBadgeContainer}>
+                       <View style={styles.nextClassBadge}>
+                         <Text style={styles.nextClassBadgeText}>
+                           {proximaClase ? proximaClase.clase.tipo.charAt(0).toUpperCase() + proximaClase.clase.tipo.slice(1) : '0'}
+                         </Text>
+                       </View>
+                       <IconButton
+                         icon="clock-outline"
+                         size={16}
+                         iconColor="white"
+                         style={styles.nextClassTrendIcon}
+                       />
+                     </View>
+                   </View>
+                   
+                   {/* Icono que se sale del contenedor */}
+                   <View style={styles.nextClassImageContainer}>
+                     <IconButton
+                       icon="calendar-clock"
+                       size={50}
+                       iconColor="rgba(246, 231, 197, 0.9)"
+                       style={styles.nextClassIcon}
+                     />
+                     {/* Círculos de fondo para efecto dinámico */}
+                     <View style={styles.nextClassBackgroundCircles}>
+                       <View style={[styles.nextClassCircle, styles.nextClassCircle1]} />
+                       <View style={[styles.nextClassCircle, styles.nextClassCircle2]} />
+                       <View style={[styles.nextClassCircle, styles.nextClassCircle3]} />
+                     </View>
+                   </View>
+                 </View>
+               </TouchableOpacity>
+             </View>
 
             {/* Mis Reservas - Derecha */}
             <View style={styles.rightColumn}>
               <TouchableOpacity 
-                style={[styles.reservasCard, { backgroundColor: theme.colors.primary }]}
+                style={[styles.reservasCard, { backgroundColor: '#FFAF2E' }]}
                 onPress={handleNavigateToReservas}
                 activeOpacity={0.8}
               >
                 <View style={styles.reservasContent}>
                   <View style={styles.reservasTextContainer}>
-                    <Text style={styles.reservasTitle}>Mis <Text style={{color: 'orange', fontSize: 28, fontWeight: 'bold'}}>Reservas</Text></Text>
+                    <Text style={styles.reservasTitle}>Mis <Text style={{color: 'black', fontSize: 28, fontWeight: 'bold'}}>Reservas</Text></Text>
                     <Text style={styles.reservasSubtitle}>
                       {state.isLoading ? 'Cargando...' : `${reservasActivas.length} reservas activas`}
                     </Text>
@@ -279,9 +283,7 @@ const HomeScreen: React.FC = () => {
                         style={styles.reservasTrendIcon}
                       />
                     </View>
-                  </View>
-                  
-                  
+                  </View>                  
                 </View>
                              </TouchableOpacity>
              </View>
@@ -353,29 +355,107 @@ const styles = StyleSheet.create({
   // Next Class Section
   nextClassCard: {
     borderRadius: 20,
-    marginBottom: 20,
+    marginTop: 0,
     padding: 20,
+    minHeight: 172.5,
+    overflow: 'hidden',
+    position: 'relative',
   },
   nextClassHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
   },
-  nextClassTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
   nextClassContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  nextClassTextContainer: {
+    flex: 1,
+    zIndex: 2,
+  },
+  nextClassTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 4,
+  },
+  nextClassSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 12,
+  },
+  nextClassBadgeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  nextClassIconContainer: {
-    marginRight: 16,
+  nextClassBadge: {
+    backgroundColor: '#000',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  nextClassBadgeText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  nextClassTrendIcon: {
+    backgroundColor: '#000',
+    borderRadius: 8,
+    margin: 0,
+  },
+  nextClassImageContainer: {
+    position: 'relative',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+    marginRight: -90,
+    marginTop: -60,
   },
   nextClassIcon: {
-    margin: 0,
-    borderRadius: 12,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  nextClassBackgroundCircles: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  nextClassCircle: {
+    position: 'absolute',
+    borderRadius: 50,
+    backgroundColor: 'rgba(246, 231, 197, 0.15)',
+  },
+  nextClassCircle1: {
+    width: 80,
+    height: 80,
+    top: -10,
+    right: 20,
+  },
+  nextClassCircle2: {
+    width: 60,
+    height: 60,
+    bottom: 10,
+    right: 60,
+  },
+  nextClassCircle3: {
+    width: 40,
+    height: 40,
+    top: 30,
+    right: 40,
   },
   nextClassDetails: {
     flex: 1,
