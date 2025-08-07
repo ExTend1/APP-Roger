@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, ScrollView, StyleSheet, View, Image } from 'react-native';
 import {
   ActivityIndicator,
   Button,
@@ -99,6 +99,19 @@ const ClaseDetalleScreen: React.FC = () => {
     return emojis[tipo.toLowerCase()] || '🏋️‍♂️';
   };
 
+  // Obtener imagen según el tipo de clase
+  const getImageByTipo = (tipo: string) => {
+    const tipoLower = tipo.toLowerCase();
+    
+    if (tipoLower === 'crossfit') {
+      return require('../../../assets/images/crossfit.png');
+    } else if (tipoLower === 'pilates') {
+      return require('../../../assets/images/pilates.png');
+    }
+    
+    return null; // Para otros tipos, no mostrar imagen
+  };
+
   // Obtener color según el tipo de clase
   const getColorByTipo = (tipo: string) => {
     const colors: Record<string, string> = {
@@ -146,60 +159,80 @@ const ClaseDetalleScreen: React.FC = () => {
     
     return (
       <View style={[styles.claseCard, { backgroundColor: theme.colors.surface }]}>
-                 {/* Sección Superior - Gradiente */}
-         <View style={[
-           styles.topSection, 
-           { 
-             backgroundColor: theme.dark ? '#2C2C2C' : '#FFFFFF',
-           }
-         ]}>
-          {/* Badges superiores */}
-          <View style={styles.badgesContainer}>
-            <View style={[styles.badge, { backgroundColor: colorTipo }]}>
-              <Text style={styles.badgeText}>
-                {clase.tipo.charAt(0).toUpperCase() + clase.tipo.slice(1)}
-              </Text>
-            </View>
-                         <View style={[styles.badge, { backgroundColor: theme.dark ? '#FFAF2E' : '#E0E0E0' }]}>
-               <Text style={[styles.badgeText, { color: theme.dark ? 'black' : 'rgba(0, 0, 0, 0.7)' }]}>
-                 Alta Intensidad
-               </Text>
-             </View>
-          </View>
+                  {/* Sección Superior - Gradiente */}
+          <View style={[
+            styles.topSection, 
+            { 
+              backgroundColor: theme.dark ? '#2C2C2C' : '#FFFFFF',
+            }
+          ]}>
+            {/* Background Image para crossfit y pilates */}
+            {(() => {
+              const claseImage = getImageByTipo(clase.tipo);
+              if (claseImage) {
+                return (
+                  <Image 
+                    source={claseImage} 
+                    style={styles.topSectionBackground}
+                    resizeMode="cover"
+                  />
+                );
+              }
+              return null;
+            })()}
+            
+            {/* Overlay para mejorar legibilidad */}
+            {(() => {
+              const claseImage = getImageByTipo(clase.tipo);
+              if (claseImage) {
+                return (
+                  <View style={styles.topSectionOverlay} />
+                );
+              }
+              return null;
+            })()}
 
-                     {/* Círculo central con placeholder de foto */}
-           <View style={[
-             styles.circleContainer,
-             { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)' }
-           ]}>
-             <View style={styles.photoPlaceholder}>
-               <Text style={styles.photoPlaceholderText}>
-                 📷
-               </Text>
-               <Text style={styles.photoPlaceholderSubtext}>
-                 Foto no disponible
-               </Text>
-             </View>
-            {/* Círculos de fondo para efecto dinámico */}
-            <View style={styles.backgroundCircles}>
-              <View style={[
-                styles.circle, 
-                styles.circle1, 
-                { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)' }
-              ]} />
-              <View style={[
-                styles.circle, 
-                styles.circle2, 
-                { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.2)' }
-              ]} />
-              <View style={[
-                styles.circle, 
-                styles.circle3, 
-                { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.15)' }
-              ]} />
-            </View>
+                     {/* Círculo central con imagen o placeholder - Solo para clases sin imagen */}
+             {(() => {
+               const claseImage = getImageByTipo(clase.tipo);
+               if (!claseImage) {
+                 return (
+                   <View style={[
+                     styles.circleContainer,
+                     { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)' }
+                   ]}>
+                     <View style={styles.photoPlaceholder}>
+                       <Text style={styles.photoPlaceholderText}>
+                         {getEmojiByTipo(clase.tipo)}
+                       </Text>
+                       <Text style={styles.photoPlaceholderSubtext}>
+                         {clase.tipo.charAt(0).toUpperCase() + clase.tipo.slice(1)}
+                       </Text>
+                     </View>
+                     {/* Círculos de fondo para efecto dinámico */}
+                     <View style={styles.backgroundCircles}>
+                       <View style={[
+                         styles.circle, 
+                         styles.circle1, 
+                         { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)' }
+                       ]} />
+                       <View style={[
+                         styles.circle, 
+                         styles.circle2, 
+                         { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.2)' }
+                       ]} />
+                       <View style={[
+                         styles.circle, 
+                         styles.circle3, 
+                         { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.15)' }
+                       ]} />
+                     </View>
+                   </View>
+                 );
+               }
+               return null;
+             })()}
           </View>
-        </View>
 
                  {/* Sección Inferior - Información */}
          <View style={[
@@ -208,13 +241,29 @@ const ClaseDetalleScreen: React.FC = () => {
              backgroundColor: theme.dark ? '#1A1A1A' : '#F5F5F5'
            }
          ]}>
-                     {/* Título */}
-           <Text style={[
-             styles.claseTitle, 
-             { color: theme.dark ? 'white' : 'black' }
-           ]}>
-             {clase.nombre}
-           </Text>
+            {/* Título y Badges en la misma línea */}
+            <View style={styles.titleRow}>
+              <Text style={[
+                styles.claseTitle, 
+                { color: theme.dark ? 'white' : 'black' }
+              ]}>
+                {clase.nombre}
+              </Text>
+
+              {/* Badges a la derecha del título */}
+              <View style={styles.titleBadgesContainer}>
+                <View style={[styles.badge, { backgroundColor: colorTipo }]}>
+                  <Text style={styles.badgeText}>
+                    {clase.tipo.charAt(0).toUpperCase() + clase.tipo.slice(1)}
+                  </Text>
+                </View>
+                <View style={[styles.badge, { backgroundColor: theme.dark ? '#FFAF2E' : '#E0E0E0' }]}>
+                  <Text style={[styles.badgeText, { color: theme.dark ? 'black' : 'rgba(0, 0, 0, 0.7)' }]}>
+                    Alta Intensidad
+                  </Text>
+                </View>
+              </View>
+            </View>
 
            {/* Descripción */}
            <Text style={[
@@ -398,14 +447,16 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 16, // Restaurado el padding horizontal original
   },
   searchbar: {
     marginVertical: 12,
+    marginHorizontal: 16, // Agregado margen horizontal solo para la búsqueda
     borderRadius: 12,
   },
   filtrosContainer: {
     marginBottom: 16,
+    paddingHorizontal: 16, // Agregado padding horizontal solo para los filtros
   },
   filtrosContent: {
     paddingHorizontal: 4,
@@ -438,7 +489,7 @@ const styles = StyleSheet.create({
   claseCard: {
     marginBottom: 16,
     borderRadius: 16,
-    marginHorizontal: 4,
+    marginHorizontal: 4, // Restaurado el margen horizontal original
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: {
@@ -450,19 +501,22 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   topSection: {
-    padding: 20,
+    padding: 0, // Eliminado el padding para que la imagen ocupe toda la zona
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     alignItems: 'center',
     position: 'relative',
-    minHeight: 180,
+    minHeight: 280, // Aumentado para más espacio para la imagen
     justifyContent: 'center',
   },
   badgesContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start', // Cambiado a flex-start para alinear a la izquierda
     width: '100%',
     marginBottom: 15,
+    paddingHorizontal: 20, // Agregado padding horizontal para los badges
+    paddingTop: 20, // Agregado padding superior para los badges
+    gap: 8, // Agregado gap entre los badges
   },
   badge: {
     paddingVertical: 5,
@@ -479,7 +533,6 @@ const styles = StyleSheet.create({
   circleContainer: {
     width: 120,
     height: 120,
-    borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -498,7 +551,6 @@ const styles = StyleSheet.create({
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 60,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
   photoPlaceholderText: {
@@ -549,7 +601,8 @@ const styles = StyleSheet.create({
   claseTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 0, // Eliminado el margen inferior ya que está en titleRow
+    flex: 1, // Para que ocupe el espacio disponible
   },
   claseDescription: {
     fontSize: 15,
@@ -613,6 +666,41 @@ const styles = StyleSheet.create({
   },
   snackbar: {
     marginBottom: 16,
+  },
+  claseImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 60,
+  },
+  topSectionBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  topSectionOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0,0,0,0.2)', // Overlay más sutil para que la imagen se vea mejor
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  titleBadgesContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4, // Ajustar el margen superior para que esté alineado con el título
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
 });
 

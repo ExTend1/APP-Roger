@@ -230,7 +230,7 @@ const HomeScreen: React.FC = () => {
                 {/* Imagen que se sale del contenedor */}
                 <View style={styles.imageContainer}>
                   <Image 
-                    source={require('../../../assets/images/aguchin.png')}
+                    source={require('../../../assets/images/coach (1).png')}
                     style={styles.workoutImage}
                     resizeMode="cover"
                     accessibilityLabel="Ilustración de persona haciendo ejercicio"
@@ -672,8 +672,8 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
-    width: 160,
-    height: 160,
+    width: 200,
+    height: 200,
     overflow: 'hidden',
     marginRight: -50, // Para que se salga más del contenedor
     marginTop: -30,
@@ -897,7 +897,7 @@ const styles = StyleSheet.create({
 
   // Indicador de Progreso Mensual
   progressSection: {
-    marginTop: 8, // Reducido para que esté más cerca de los dos indicadores del grid
+    marginTop: 8 , // Reducido para que esté más cerca de los dos indicadores del grid
     marginBottom: 20,
     marginLeft: 10,
     marginRight: 10,
