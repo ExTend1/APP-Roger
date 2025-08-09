@@ -1,15 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 import {
-    ActivityIndicator,
-    Button,
-    Card,
-    Chip,
-    FAB,
-    Snackbar,
-    Text,
-    useTheme
+  ActivityIndicator,
+  Button,
+  Card,
+  FAB,
+  Snackbar,
+  Text,
+  useTheme
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomHeader from '../../components/CustomHeader';
@@ -30,6 +29,7 @@ const MisTurnosScreen: React.FC = () => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarType, setSnackbarType] = useState<'success' | 'error'>('success');
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   // Cargar datos al montar el componente
   useEffect(() => {
@@ -64,6 +64,17 @@ const MisTurnosScreen: React.FC = () => {
     setSnackbarMessage(message);
     setSnackbarType(type);
     setSnackbarVisible(true);
+  };
+
+  // Toggle expanded state
+  const toggleExpanded = (reservaId: string) => {
+    const newExpanded = new Set(expandedCards);
+    if (newExpanded.has(reservaId)) {
+      newExpanded.delete(reservaId);
+    } else {
+      newExpanded.add(reservaId);
+    }
+    setExpandedCards(newExpanded);
   };
 
   // Obtener emoji según el tipo de clase
@@ -117,100 +128,155 @@ const MisTurnosScreen: React.FC = () => {
   const renderReserva = ({ item: reserva }: { item: ReservaCardData }) => {
     const colorTipo = getColorByTipo(reserva.clase.tipo);
     const diasRestantes = getDiasRestantes(reserva.fecha);
-    const puedeCancelar = diasRestantes.dias >= 0; // Solo se puede cancelar si no ha pasado
+    const puedeCancelar = diasRestantes.dias >= 0;
+    const isExpanded = expandedCards.has(reserva.id);
 
     return (
-      <Card style={[styles.reservaCard, { backgroundColor: theme.colors.surface }]} elevation={3}>
-        <Card.Content>
-          <View style={styles.reservaHeader}>
-            <View style={styles.claseInfo}>
-              <Text style={styles.claseEmoji}>
-                {getEmojiByTipo(reserva.clase.tipo)}
+      <Card style={[styles.reservaCard, { backgroundColor: theme.colors.surface }]} elevation={2}>
+        {/* Línea naranja a la izquierda */}
+        <View style={[styles.orangeLine, { backgroundColor: colorTipo }]} />
+        
+        <Card.Content style={styles.cardContent}>
+          {/* Header principal con título, instructor y tiempo - Layout compacto */}
+          <View style={styles.cardHeader}>
+            <View style={styles.titleSection}>
+              <Text style={[styles.claseNombre, { color: theme.colors.onSurface }]}>
+                {reserva.clase.nombre}
               </Text>
-              <View style={styles.claseTitulo}>
-                <Text style={[styles.claseNombre, { color: theme.colors.onSurface }]}>
-                  {reserva.clase.nombre}
+              <Text style={[styles.instructorName, { color: theme.colors.onSurfaceVariant }]}>
+                {reserva.clase.profesor} - {reserva.clase.horario} - {diasRestantes.texto}
+              </Text>
+            </View>
+            
+            <View style={[styles.difficultyChip, { backgroundColor: colorTipo }]}>
+              <Text style={styles.difficultyChipText}>
+                {reserva.clase.tipo.charAt(0).toUpperCase() + reserva.clase.tipo.slice(1)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Botones de acción en la parte inferior - Solo visibles cuando NO está expandido */}
+          {!isExpanded && (
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity 
+                style={styles.detailsButton}
+                onPress={() => toggleExpanded(reserva.id)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.detailsButtonText, { color: "white" }]}>
+                  Ver Detalles
                 </Text>
-                <Chip 
-                  mode="flat"
-                  style={[styles.tipoChip, { backgroundColor: colorTipo }]}
-                  textStyle={{ color: 'white', fontSize: 11, fontWeight: 'bold' }}
+              </TouchableOpacity>
+              
+              {puedeCancelar && reserva.estado === 'ACTIVA' && (
+                <Button
+                  mode="outlined"
+                  onPress={() => handleCancelar(reserva.claseId, reserva.clase.nombre)}
+                  loading={state.isCanceling}
+                  disabled={state.isCanceling}
+                  style={[styles.cancelButton, { borderColor: theme.colors.outline }]}
+                  textColor={"white"}
+                  compact
                 >
-                  {reserva.clase.tipo.charAt(0).toUpperCase() + reserva.clase.tipo.slice(1)}
-                </Chip>
+                  Cancelar
+                </Button>
+              )}
+            </View>
+          )}
+
+          {/* Detalle expandido */}
+          {isExpanded && (
+            <View style={styles.detalleContainer}>
+              {/* Información de tiempo */}
+              <View style={styles.tiempoContainer}>
+                <View style={styles.tiempoInfo}>
+                  <Text style={[styles.tiempoLabel, { color: theme.colors.primary, fontWeight: '600' }]}>
+                    📅 {diasRestantes.texto}
+                  </Text>
+                  <Text style={[styles.fechaCompleta, { color: theme.colors.onSurfaceVariant }]}>
+                    {reserva.fechaFormateada}
+                  </Text>
+                </View>
+                
+                {diasRestantes.dias >= 0 && (
+                  <View style={[styles.tiempoChip, { backgroundColor: diasRestantes.dias === 0 ? '#4CAF50' : '#2196F3' }]}>
+                    <Text style={styles.tiempoChipText}>
+                      {diasRestantes.dias === 0 ? 'HOY' : diasRestantes.dias === 1 ? 'MAÑANA' : `${diasRestantes.dias}D`}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Detalles completos de la clase */}
+              <View style={styles.detallesContainer}>
+                <View style={styles.detalleRow}>
+                  <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>👨‍🏫</Text>
+                  <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant, fontWeight: '500' }]}>
+                    {reserva.clase.profesor}
+                  </Text>
+                </View>
+                
+                <View style={styles.detalleRow}>
+                  <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>⏰</Text>
+                  <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant }]}>
+                    {reserva.clase.horario} • {reserva.clase.duracion} min
+                  </Text>
+                </View>
+                
+                <View style={styles.detalleRow}>
+                  <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>🗓️</Text>
+                  <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant }]}>
+                    {reserva.diasTexto}
+                  </Text>
+                </View>
+
+                <View style={styles.detalleRow}>
+                  <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>🏷️</Text>
+                  <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant }]}>
+                    Tipo: {reserva.clase.tipo.charAt(0).toUpperCase() + reserva.clase.tipo.slice(1)}
+                  </Text>
+                </View>
+
+                {/* Descripción de la clase */}
+                {reserva.clase.descripcion && (
+                  <View style={styles.descripcionContainer}>
+                    <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>📝</Text>
+                    <Text style={[styles.descripcionTexto, { color: theme.colors.onSurfaceVariant }]}>
+                      {reserva.clase.descripcion}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Botones de acción en la parte inferior cuando está expandido */}
+              <View style={[styles.actionButtonsContainer, { marginTop: 20 }]}>
+                <TouchableOpacity 
+                  style={styles.detailsButton}
+                  onPress={() => toggleExpanded(reserva.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.detailsButtonText, { color: "white" }]}>
+                    Ver menos
+                  </Text>
+                </TouchableOpacity>
+                
+                {puedeCancelar && reserva.estado === 'ACTIVA' && (
+                  <Button
+                    mode="outlined"
+                    onPress={() => handleCancelar(reserva.claseId, reserva.clase.nombre)}
+                    loading={state.isCanceling}
+                    disabled={state.isCanceling}
+                    style={[styles.cancelButton, { borderColor: theme.colors.outline }]}
+                    textColor={"white"}
+                    compact
+                  >
+                    Cancelar
+                  </Button>
+                )}
               </View>
             </View>
-            
-            <Chip
-              mode="flat"
-              style={[styles.estadoChip, { backgroundColor: reserva.estadoColor }]}
-              textStyle={{ color: 'white', fontSize: 12, fontWeight: '600' }}
-            >
-              {reserva.estadoTexto}
-            </Chip>
-          </View>
-
-          {/* Información de tiempo mejorada */}
-          <View style={styles.tiempoContainer}>
-            <View style={styles.tiempoInfo}>
-              <Text style={[styles.tiempoLabel, { color: theme.colors.primary, fontWeight: '600' }]}>
-                📅 {diasRestantes.texto}
-              </Text>
-              <Text style={[styles.fechaCompleta, { color: theme.colors.onSurfaceVariant }]}>
-                {reserva.fechaFormateada}
-              </Text>
-            </View>
-            
-            {diasRestantes.dias >= 0 && (
-              <View style={[styles.tiempoChip, { backgroundColor: diasRestantes.dias === 0 ? '#4CAF50' : '#2196F3' }]}>
-                <Text style={styles.tiempoChipText}>
-                  {diasRestantes.dias === 0 ? 'HOY' : diasRestantes.dias === 1 ? 'MAÑANA' : `${diasRestantes.dias}D`}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Detalles de la clase mejorados */}
-          <View style={styles.detallesContainer}>
-            <View style={styles.detalleRow}>
-              <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>👨‍🏫</Text>
-              <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant, fontWeight: '500' }]}>
-                {reserva.clase.profesor}
-              </Text>
-            </View>
-            
-            <View style={styles.detalleRow}>
-              <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>⏰</Text>
-              <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant }]}>
-                {reserva.clase.horario} • {reserva.clase.duracion} min
-              </Text>
-            </View>
-            
-            <View style={styles.detalleRow}>
-              <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>🗓️</Text>
-              <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant }]}>
-                {reserva.diasTexto}
-              </Text>
-            </View>
-          </View>
+          )}
         </Card.Content>
-
-        {/* Acciones mejoradas */}
-        {puedeCancelar && reserva.estado === 'ACTIVA' && (
-          <Card.Actions style={styles.cardActions}>
-            <Button
-              mode="outlined"
-              onPress={() => handleCancelar(reserva.claseId, reserva.clase.nombre)}
-              loading={state.isCanceling}
-              disabled={state.isCanceling}
-              icon="close"
-              style={[styles.cancelButton, { borderColor: theme.colors.error }]}
-              textColor={theme.colors.error}
-            >
-              Cancelar Reserva
-            </Button>
-          </Card.Actions>
-        )}
       </Card>
     );
   };
@@ -335,38 +401,105 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 12,
   },
-  reservaHeader: {
+  // Estilos para la línea naranja a la izquierda
+  orangeLine: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 6, // Ancho de la línea
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+  },
+  // Estilos para el contenido del Card
+  cardContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingLeft: 24, // Más espacio para la línea naranja
+  },
+  // Estilos para el header del Card
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  claseInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  // Estilos para la sección del título
+  titleSection: {
     flex: 1,
     marginRight: 12,
-  },
-  claseEmoji: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  claseTitulo: {
-    flex: 1,
   },
   claseNombre: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  tipoChip: {
-    alignSelf: 'flex-start',
-    borderRadius: 12,
-    height: 24,
+  instructorName: {
+    fontSize: 13,
+    opacity: 0.8,
+    lineHeight: 18,
   },
-  estadoChip: {
+  difficultyChip: {
     borderRadius: 16,
-    height: 28,
+    height: 24,
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 60,
+  },
+  difficultyChipText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  // Estilos para los botones de acción
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+    gap: 12,
+  },
+  detailsButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: 'black',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    flex: 1,
+    alignItems: 'center',
+  },
+  detailsButtonText: {
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  cancelButton: {
+    backgroundColor: "#F54927",
+    borderRadius: 10,
+    borderColor: '#9E9E9E',
+    height: 40,
+    paddingHorizontal: 16,
+    flex: 1,
+  },
+  // Estilos para el detalle expandido
+  detalleContainer: {
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  detalleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  detalleTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   tiempoContainer: {
     flexDirection: 'row',
@@ -404,6 +537,7 @@ const styles = StyleSheet.create({
   },
   detallesContainer: {
     gap: 8,
+    marginBottom: 16,
   },
   detalleRow: {
     flexDirection: 'row',
@@ -418,14 +552,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flex: 1,
   },
-  cardActions: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+  descripcionContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 8,
   },
-  cancelButton: {
+  descripcionTexto: {
+    fontSize: 14,
+    marginLeft: 8,
     flex: 1,
+    lineHeight: 20,
+  },
+  expandButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
     borderRadius: 8,
-    borderColor: '#F44336',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  expandText: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginRight: 8,
+  },
+  expandIcon: {
+    margin: 0,
+    padding: 0,
   },
   emptyContainer: {
     flex: 1,

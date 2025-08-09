@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { FlatList, RefreshControl, ScrollView, StyleSheet, View, Image } from 'react-native';
+import { FlatList, Image, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
@@ -11,6 +11,7 @@ import {
   useTheme
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Calendar, CalendarTheme, DateData } from 'react-native-calendars';
 import CustomHeader from '../../components/CustomHeader';
 import { useReservas } from '../../contexts/ReservasContext';
 import { ClaseCardData } from '../../types/reservas';
@@ -515,12 +516,12 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 15,
     paddingHorizontal: 20, // Agregado padding horizontal para los badges
-    paddingTop: 20, // Agregado padding superior para los badges
+    paddingTop: 10, // Agregado padding superior para los badges
     gap: 8, // Agregado gap entre los badges
   },
   badge: {
     paddingVertical: 5,
-    paddingHorizontal: 10,
+    paddingHorizontal: 5,
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
@@ -529,6 +530,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+
   },
   circleContainer: {
     width: 120,
