@@ -11,7 +11,6 @@ import {
   useTheme
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Calendar, CalendarTheme, DateData } from 'react-native-calendars';
 import CustomHeader from '../../components/CustomHeader';
 import { useReservas } from '../../contexts/ReservasContext';
 import { ClaseCardData } from '../../types/reservas';
