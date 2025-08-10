@@ -1,3 +1,10 @@
 import MisTurnosScreen from '@/src/screens/MisTurnosScreen';
+import { SwipeableScreen } from '@/src/components/SwipeableScreen';
 
-export default MisTurnosScreen;
+export default function TabTurnos() {
+  return (
+    <SwipeableScreen>
+      <MisTurnosScreen />
+    </SwipeableScreen>
+  );
+}

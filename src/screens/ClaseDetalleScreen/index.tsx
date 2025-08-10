@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Image, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Calendar, DateData } from 'react-native-calendars';
 import {
   ActivityIndicator,
   Button,
@@ -12,6 +13,7 @@ import {
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomHeader from '../../components/CustomHeader';
+import { SwipeableScreen } from '../../components/SwipeableScreen';
 import { useReservas } from '../../contexts/ReservasContext';
 import { ClaseCardData } from '../../types/reservas';
 
@@ -34,6 +36,7 @@ const ClaseDetalleScreen: React.FC = () => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarType, setSnackbarType] = useState<'success' | 'error'>('success');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   // Cargar datos al montar el componente
   useEffect(() => {
@@ -45,6 +48,88 @@ const ClaseDetalleScreen: React.FC = () => {
       fetchClases(),
       fetchReservas()
     ]);
+  };
+
+  // Generar datos del calendario con colores distintivos
+  const generateCalendarData = () => {
+    const calendarData: any = {};
+    
+    state.clases.forEach(clase => {
+      clase.dias.forEach(dia => {
+        // Generar fechas para las próximas 4 semanas
+        for (let week = 0; week < 4; week++) {
+          const dateKey = getDateKeyFromDay(dia, week);
+          if (dateKey) {
+            const isReservada = isClaseReservada(clase.id);
+            const color = isReservada ? '#90EE90' : '#87CEEB'; // Verde claro si está reservada, celeste si no
+            
+            if (calendarData[dateKey]) {
+              calendarData[dateKey].dots.push({
+                key: clase.id,
+                color: color,
+                selectedDotColor: color
+              });
+            } else {
+              calendarData[dateKey] = {
+                dots: [{
+                  key: clase.id,
+                  color: color,
+                  selectedDotColor: color
+                }]
+              };
+            }
+          }
+        }
+      });
+    });
+    
+    return calendarData;
+  };
+
+  // Convertir día de la semana a fecha específica
+  const getDateKeyFromDay = (dia: string, weekOffset: number = 0): string | null => {
+    const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const diaIndex = diasSemana.indexOf(dia.toLowerCase());
+    
+    if (diaIndex === -1) return null;
+    
+    const today = new Date();
+    const currentDay = today.getDay();
+    const daysUntilTarget = (diaIndex - currentDay + 7) % 7;
+    
+    // Si es hoy, mostrar la próxima semana
+    const targetDays = daysUntilTarget === 0 ? 7 + (weekOffset * 7) : daysUntilTarget + (weekOffset * 7);
+    
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + targetDays);
+    
+    return targetDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+  };
+
+  // Manejador para cuando se selecciona una fecha en el calendario
+  const handleDateSelect = (day: DateData) => {
+    const fechaSeleccionada = day.dateString;
+    const clasesEnFecha = state.clases.filter(clase => {
+      const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+      const fecha = new Date(fechaSeleccionada);
+      const diaSemana = diasSemana[fecha.getDay()];
+      return clase.dias.some(dia => dia.toLowerCase() === diaSemana.toLowerCase());
+    });
+    
+    let mensaje = `📅 ${fechaSeleccionada}\n\n`;
+    
+    if (clasesEnFecha.length > 0) {
+      mensaje += `Clases disponibles:\n`;
+      clasesEnFecha.forEach(clase => {
+        const estaReservada = isClaseReservada(clase.id);
+        const estado = estaReservada ? ' (Reservada)' : '';
+        mensaje += `• ${clase.nombre} - ${clase.horario}${estado}\n`;
+      });
+    } else {
+      mensaje += 'No hay clases programadas para este día.';
+    }
+    
+    showSnackbar(mensaje, 'success');
   };
 
   // Manejadores para los iconos del header
@@ -327,60 +412,157 @@ const ClaseDetalleScreen: React.FC = () => {
   // Obtener clases filtradas
   const clasesFiltradas = getClasesFiltradas();
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar style="light" />
-      
-      {/* Header personalizado */}
-      <CustomHeader
-        onBellPress={handleBellPress}
-      />
 
-      {/* Contenido principal */}
-      <View style={styles.content}>
-        {/* Barra de búsqueda */}
-        <Searchbar
-          placeholder="Buscar clases..."
-          onChangeText={setSearchTerm}
-          value={state.searchTerm}
-          style={styles.searchbar}
+
+  // Crear estilos dinámicos para el calendario y componentes adaptativos
+  const calendarStyles = StyleSheet.create({
+    searchContainerDynamic: {
+      backgroundColor: theme.colors.background,
+    },
+    calendarContainer: {
+      flex: 1,
+      padding: 16,
+      backgroundColor: theme.colors.surface,
+    },
+    calendar: {
+      borderRadius: 16,
+      overflow: 'hidden',
+      elevation: 4,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    calendarLegend: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      marginTop: 20,
+      paddingHorizontal: 10,
+      paddingVertical: 15,
+      backgroundColor: theme.colors.surfaceVariant,
+      borderRadius: 12,
+      marginHorizontal: 10,
+    },
+    legendItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    legendDot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      marginRight: 8,
+    },
+    legendText: {
+      fontSize: 13,
+      fontWeight: '500',
+    },
+    calendarInfo: {
+      marginTop: 20,
+      paddingHorizontal: 10,
+      paddingVertical: 15,
+      backgroundColor: theme.colors.surfaceVariant,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    calendarInfoText: {
+      fontSize: 14,
+      textAlign: 'center',
+      opacity: 0.7,
+    },
+  });
+
+  return (
+    <SwipeableScreen>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <StatusBar style="light" />
+        
+        {/* Header personalizado */}
+        <CustomHeader
+          onBellPress={handleBellPress}
         />
 
-                 {/* Filtros por tipo */}
-         <View style={styles.filtrosContainer}>
-           <ScrollView 
-             horizontal 
-             showsHorizontalScrollIndicator={false}
-             contentContainerStyle={styles.filtrosContent}
-           >
-             {tiposDisponibles.map((tipo) => (
-                                <View
-                   key={tipo.value}
-                   style={[
-                     styles.filtroCard,
-                     { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' },
-                     state.selectedTipo === tipo.value && {
-                       backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'
-                     }
-                   ]}
-                 >
-                   <Text
-                     style={[
-                       styles.filtroText,
-                       { color: theme.dark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)' },
-                       state.selectedTipo === tipo.value && {
-                         color: theme.dark ? 'white' : 'black',
-                         fontWeight: 'bold'
-                       }
-                     ]}
-                     onPress={() => setSelectedTipo(tipo.value === 'todos' ? null : tipo.value)}
-                   >
-                     {tipo.label}
-                   </Text>
-                 </View>
-             ))}
-           </ScrollView>
-         </View>
+        {/* Contenido principal */}
+        <View style={styles.content}>
+        {/* Barra de búsqueda con selector de fecha integrado */}
+        <View style={[styles.searchContainer, calendarStyles.searchContainerDynamic]}>
+          <Searchbar
+            placeholder="Buscar clases..."
+            onChangeText={setSearchTerm}
+            value={state.searchTerm}
+            style={styles.searchbar}
+          />
+          
+          {/* Botón de fecha integrado que funciona como toggle */}
+          <TouchableOpacity
+            style={[
+              styles.dateSelectorButton,
+              { 
+                backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                borderColor: theme.dark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'
+              },
+              viewMode === 'calendar' && {
+                backgroundColor: theme.colors.primary + '1A',
+                borderColor: theme.colors.primary
+              }
+            ]}
+            onPress={() => setViewMode(viewMode === 'list' ? 'calendar' : 'list')}
+          >
+            <View style={styles.dateSelectorContent}>
+              <Text style={[
+                styles.dateSelectorIcon,
+                { color: theme.dark ? '#FF6B6B' : '#E74C3C' }
+              ]}>
+                {viewMode === 'list' ? '📅' : '📋'}
+              </Text>
+              <View style={styles.dateSelectorTextContainer}>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+
+
+        {/* Filtros por tipo */}
+        <View style={styles.filtrosContainer}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filtrosContent}
+          >
+            {tiposDisponibles.map((tipo) => (
+              <View
+                key={tipo.value}
+                style={[
+                  styles.filtroCard,
+                  { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' },
+                  state.selectedTipo === tipo.value && {
+                    backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'
+                  }
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.filtroText,
+                    { color: theme.dark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)' },
+                    state.selectedTipo === tipo.value && {
+                      color: theme.dark ? 'white' : 'black',
+                      fontWeight: 'bold'
+                    }
+                  ]}
+                  onPress={() => setSelectedTipo(tipo.value === 'todos' ? null : tipo.value)}
+                >
+                  {tipo.label}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+
 
         {/* Lista de clases */}
         {state.isLoading ? (
@@ -389,6 +571,66 @@ const ClaseDetalleScreen: React.FC = () => {
             <Text style={[styles.loadingText, { color: theme.colors.onSurfaceVariant }]}>
               Cargando clases...
             </Text>
+          </View>
+        ) : viewMode === 'calendar' ? (
+          // Vista de Calendario
+          <View style={calendarStyles.calendarContainer}>
+            <Calendar
+              markedDates={generateCalendarData()}
+              markingType="multi-dot"
+              onDayPress={handleDateSelect}
+              theme={{
+                backgroundColor: theme.colors.surface,
+                calendarBackground: theme.colors.surface,
+                textSectionTitleColor: theme.colors.onSurface,
+                selectedDayBackgroundColor: theme.colors.primary,
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: theme.colors.primary,
+                dayTextColor: theme.colors.onSurface,
+                textDisabledColor: theme.colors.onSurfaceVariant,
+                dotColor: theme.colors.primary,
+                selectedDotColor: '#ffffff',
+                arrowColor: theme.colors.primary,
+                monthTextColor: theme.colors.onSurface,
+                indicatorColor: theme.colors.primary,
+                textDayFontWeight: '400',
+                textMonthFontWeight: 'bold',
+                textDayHeaderFontWeight: '600',
+                textDayFontSize: 16,
+                textMonthFontSize: 18,
+                textDayHeaderFontSize: 14
+              }}
+              style={calendarStyles.calendar}
+              enableSwipeMonths={true}
+              showWeekNumbers={false}
+              firstDay={1} // Lunes como primer día de la semana
+            />
+            
+            {/* Leyenda del calendario */}
+            <View style={calendarStyles.calendarLegend}>
+              <View style={calendarStyles.legendItem}>
+                <View style={[calendarStyles.legendDot, { backgroundColor: '#90EE90' }]} />
+                <Text style={[calendarStyles.legendText, { color: theme.colors.onSurfaceVariant }]}>
+                  Clases reservadas
+                </Text>
+              </View>
+              <View style={calendarStyles.legendItem}>
+                <View style={[calendarStyles.legendDot, { backgroundColor: '#87CEEB' }]} />
+                <Text style={[calendarStyles.legendText, { color: theme.colors.onSurfaceVariant }]}>
+                  Clases disponibles
+                </Text>
+              </View>
+            </View>
+            
+            {/* Información adicional del calendario */}
+            <View style={calendarStyles.calendarInfo}>
+              <Text style={[calendarStyles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
+                💡 Toca una fecha para ver las clases del día
+              </Text>
+              <Text style={[calendarStyles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
+                📅 El calendario muestra las próximas 4 semanas
+              </Text>
+            </View>
           </View>
         ) : clasesFiltradas.length > 0 ? (
           <FlatList
@@ -437,9 +679,10 @@ const ClaseDetalleScreen: React.FC = () => {
       >
         {snackbarMessage}
       </Snackbar>
-    </SafeAreaView>
-  );
-};
+        </SafeAreaView>
+      </SwipeableScreen>
+    );
+  };
 
 const styles = StyleSheet.create({
   container: {
@@ -449,10 +692,72 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16, // Restaurado el padding horizontal original
   },
-  searchbar: {
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginVertical: 12,
-    marginHorizontal: 16, // Agregado margen horizontal solo para la búsqueda
+    marginHorizontal: 16,
     borderRadius: 12,
+    padding: 8,
+    gap: 12,
+  },
+
+  dateSelectorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    minWidth: 50,
+  },
+  dateSelectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dateSelectorIcon: {
+    fontSize: 20,
+  },
+  dateSelectorTextContainer: {
+    alignItems: 'center',
+  },
+  dateSelectorMonth: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  dateSelectorDay: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    lineHeight: 20,
+  },
+  searchbar: {
+    flex: 1, // Hace que el Searchbar ocupe el espacio disponible
+    borderRadius: 12,
+    paddingVertical: 0, // Eliminar padding vertical para que el texto se ajuste mejor
+    paddingHorizontal: 12, // Ajustar padding horizontal
+  },
+  viewToggleButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    minWidth: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewToggleButtonActive: {
+    borderColor: '#4CAF50', // Color de la línea activa
+    backgroundColor: '#E8F5E9', // Color de fondo activo
+  },
+  viewToggleText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  viewToggleTextActive: {
+    color: '#4CAF50', // Color del texto activo
+    fontWeight: 'bold',
   },
   filtrosContainer: {
     marginBottom: 16,
@@ -703,6 +1008,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
+
 });
 
 export default ClaseDetalleScreen;
