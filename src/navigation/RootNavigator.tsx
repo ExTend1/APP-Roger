@@ -1,9 +1,8 @@
-import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import React from 'react';
 import { useAuthStore } from '../contexts/authStore';
-import { ReservasProvider } from '../contexts/ReservasContext';
 import AuthNavigator from './AuthNavigator';
-import AppNavigator from './AppNavigator';
+import TestNavigator from './TestNavigator';
 
 const RootNavigator: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -19,10 +18,8 @@ const RootNavigator: React.FC = () => {
 
   return (
     <NavigationContainer>
-      {/* Temporalmente mostrar AppNavigator para probar reservas */}
-      <ReservasProvider>
-        <AppNavigator />
-      </ReservasProvider>
+      {/* Temporalmente mostrar TestNavigator para diagnosticar la API */}
+      <TestNavigator />
     </NavigationContainer>
   );
 };

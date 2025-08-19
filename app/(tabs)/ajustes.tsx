@@ -7,6 +7,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import { useAuthStore } from '@/src/contexts/authStore';
+import { SwipeableScreen } from '@/src/components/SwipeableScreen';
 
 export default function AjustesScreen() {
   const theme = usePaperTheme();
@@ -42,9 +43,10 @@ export default function AjustesScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar style={theme.dark ? "light" : "dark"} backgroundColor={theme.colors.surface} />
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <SwipeableScreen>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <StatusBar style={theme.dark ? "light" : "dark"} backgroundColor={theme.colors.surface} />
+        <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
@@ -176,8 +178,9 @@ export default function AjustesScreen() {
             Versión 1.0.0
           </Text>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </SwipeableScreen>
   );
 }
 
