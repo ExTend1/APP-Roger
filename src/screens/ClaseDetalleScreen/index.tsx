@@ -132,10 +132,7 @@ const ClaseDetalleScreen: React.FC = () => {
     showSnackbar(mensaje, 'success');
   };
 
-  // Manejadores para los iconos del header
-  const handleBellPress = () => {
-    console.log('🔔 Notificaciones');
-  };
+
 
   // Manejador de reserva/cancelación
   const handleReservaToggle = async (clase: ClaseCardData) => {
@@ -480,10 +477,8 @@ const ClaseDetalleScreen: React.FC = () => {
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <StatusBar style="light" />
         
-        {/* Header personalizado */}
-        <CustomHeader
-          onBellPress={handleBellPress}
-        />
+              {/* Header personalizado */}
+      <CustomHeader />
 
         {/* Contenido principal */}
         <View style={styles.content}>

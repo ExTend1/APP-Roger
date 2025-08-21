@@ -132,10 +132,7 @@ const HomeScreen: React.FC = () => {
     }, 200);
   };
 
-  // Manejadores para los iconos del header
-  const handleBellPress = () => {
-    // Aquí puedes navegar a las notificaciones
-  };
+
 
   // Navegar a mis reservas
   const handleNavigateToReservas = () => {
@@ -159,7 +156,7 @@ const HomeScreen: React.FC = () => {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <StatusBar style={theme.dark ? "light" : "dark"} backgroundColor={theme.colors.surface} />
-        <CustomHeader onBellPress={handleBellPress} />
+        <CustomHeader />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={[styles.loadingText, { color: theme.colors.onSurface }]}>
@@ -175,9 +172,7 @@ const HomeScreen: React.FC = () => {
       <StatusBar style={theme.dark ? "light" : "dark"} backgroundColor={theme.colors.surface} />
       
       {/* Header personalizado */}
-      <CustomHeader
-        onBellPress={handleBellPress}
-      />
+      <CustomHeader />
       
       <ScrollView 
         contentContainerStyle={styles.scrollContainer}

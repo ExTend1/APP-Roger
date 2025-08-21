@@ -1,5 +1,6 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useReducer } from 'react';
 import { reservaService } from '../services/reservaService';
+import NotificationService from '../services/notificationService';
 import {
   Clase,
   ClaseCardData,
@@ -8,6 +9,7 @@ import {
   ReservaConClase
 } from '../types/reservas';
 import { useAuthStore } from './authStore';
+import { useNotificationConfig } from './NotificationConfigContext';
 
 // Estado del contexto
 interface ReservasState {
@@ -249,6 +251,7 @@ interface ReservasProviderProps {
 export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(reservasReducer, initialState);
   const { user, isAuthenticated } = useAuthStore();
+  const { notificationsEnabled } = useNotificationConfig();
 
   // Cargar datos automáticamente cuando el usuario esté autenticado
   useEffect(() => {
@@ -268,6 +271,37 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
       dispatch({ type: 'SET_RESERVAS', payload: [] });
     }
   }, [isAuthenticated, user?.id]);
+
+  // Programar notificaciones para reservas existentes cuando se cargan
+  useEffect(() => {
+    if (state.reservas.length > 0 && notificationsEnabled) {
+      const scheduleNotificationsForExistingReservas = async () => {
+        try {
+          const notificationService = NotificationService.getInstance();
+          
+          // Solicitar permisos primero
+          const hasPermission = await notificationService.requestPermissions();
+          if (!hasPermission) {
+            console.log('No se tienen permisos de notificación');
+            return;
+          }
+          
+          // Programar notificaciones para todas las reservas activas
+          for (const reserva of state.reservas) {
+            if (reserva.estado === 'ACTIVA') {
+              await notificationService.scheduleClassReminder(reserva);
+            }
+          }
+          
+          console.log('Notificaciones programadas para reservas existentes');
+        } catch (error) {
+          console.warn('Error al programar notificaciones para reservas existentes:', error);
+        }
+      };
+      
+      scheduleNotificationsForExistingReservas();
+    }
+  }, [state.reservas, notificationsEnabled]);
 
   // Acciones de datos
   const fetchClases = useCallback(async () => {
@@ -339,6 +373,17 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
             clase: clase,
           };
           dispatch({ type: 'ADD_RESERVA', payload: reservaCompleta });
+          
+          // Programar notificación para la clase solo si están habilitadas
+          if (notificationsEnabled) {
+            try {
+              const notificationService = NotificationService.getInstance();
+              await notificationService.scheduleClassReminder(reservaCompleta);
+            } catch (notificationError) {
+              console.warn('Error al programar notificación:', notificationError);
+              // No fallar la reserva si la notificación falla
+            }
+          }
         } else {
           // Si no tenemos la clase, solo actualizar el estado
           dispatch({ 
@@ -372,6 +417,17 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
       const response = await reservaService.cancelarReserva(claseId);
       
       if (response.success) {
+        // Cancelar notificación de la clase solo si están habilitadas
+        if (notificationsEnabled) {
+          try {
+            const notificationService = NotificationService.getInstance();
+            await notificationService.cancelClassReminder(claseId);
+          } catch (notificationError) {
+            console.warn('Error al cancelar notificación:', notificationError);
+            // No fallar la cancelación si la notificación falla
+          }
+        }
+        
         dispatch({ type: 'REMOVE_RESERVA', payload: claseId });
         return true;
       } else {

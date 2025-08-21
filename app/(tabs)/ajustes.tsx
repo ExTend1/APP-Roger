@@ -7,14 +7,58 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import { useAuthStore } from '@/src/contexts/authStore';
+import { useNotificationConfig } from '@/src/contexts/NotificationConfigContext';
 import { SwipeableScreen } from '@/src/components/SwipeableScreen';
+import NotificationService from '@/src/services/notificationService';
 
 export default function AjustesScreen() {
   const theme = usePaperTheme();
   const router = useRouter();
   const { themeMode, toggleTheme } = useTheme();
   const { logout } = useAuthStore();
-  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
+  const { notificationsEnabled, setNotificationsEnabled } = useNotificationConfig();
+
+  // Función para manejar el cambio de estado de notificaciones
+  const handleNotificationToggle = async (enabled: boolean) => {
+    try {
+      if (enabled) {
+        // Solicitar permisos cuando se activa
+        const notificationService = NotificationService.getInstance();
+        const hasPermission = await notificationService.requestPermissions();
+        
+        if (hasPermission) {
+          await setNotificationsEnabled(true);
+          Alert.alert('Notificaciones Activadas', 'Recibirás recordatorios de clases 1 hora antes.');
+        } else {
+          Alert.alert(
+            'Permisos Requeridos',
+            'Para recibir notificaciones de clases, necesitas permitir el acceso a las notificaciones.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { 
+                text: 'Configuración', 
+                onPress: () => {
+                  // Aquí podrías abrir la configuración del sistema
+                  console.log('Usuario debe ir a Configuración > Notificaciones');
+                }
+              }
+            ]
+          );
+          return; // No cambiar el estado si no hay permisos
+        }
+      } else {
+        // Desactivar notificaciones
+        await setNotificationsEnabled(false);
+        // Cancelar todas las notificaciones programadas
+        const notificationService = NotificationService.getInstance();
+        await notificationService.cancelAllNotifications();
+        Alert.alert('Notificaciones Desactivadas', 'Ya no recibirás recordatorios de clases.');
+      }
+    } catch (error) {
+      console.error('Error al cambiar estado de notificaciones:', error);
+      Alert.alert('Error', 'No se pudo cambiar el estado de las notificaciones');
+    }
+  };
 
   const handleLogout = async () => {
     Alert.alert(
@@ -65,25 +109,12 @@ export default function AjustesScreen() {
             </Text>
             <List.Item
               title="Notificaciones push"
-              description="Recibe alertas sobre clases y reservas"
+              description="Recibe recordatorios de clases 1 hora antes"
               left={(props) => <List.Icon {...props} icon="bell" />}
               right={() => (
                 <Switch
                   value={notificationsEnabled}
-                  onValueChange={setNotificationsEnabled}
-                  color={theme.colors.primary}
-                />
-              )}
-            />
-            <Divider style={styles.divider} />
-            <List.Item
-              title="Recordatorios de clases"
-              description="Avisos antes de tus clases programadas"
-              left={(props) => <List.Icon {...props} icon="clock" />}
-              right={() => (
-                <Switch
-                  value={notificationsEnabled}
-                  onValueChange={setNotificationsEnabled}
+                  onValueChange={handleNotificationToggle}
                   color={theme.colors.primary}
                 />
               )}
@@ -154,6 +185,7 @@ export default function AjustesScreen() {
               description="Centro de ayuda y preguntas frecuentes"
               left={(props) => <List.Icon {...props} icon="help-circle" />}
               right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => router.push('/centro-ayuda' as any)}
             />
             <Divider style={styles.divider} />
             <List.Item
@@ -168,6 +200,23 @@ export default function AjustesScreen() {
               description="Información de la aplicación"
               left={(props) => <List.Icon {...props} icon="information" />}
               right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => router.push('/acercade' as any)}
+            />
+            <Divider style={styles.divider} />
+            <List.Item
+              title="Política de Privacidad"
+              description="Cómo manejamos tu información"
+              left={(props) => <List.Icon {...props} icon="shield-account" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => router.push('/politica-privacidad' as any)}
+            />
+            <Divider style={styles.divider} />
+            <List.Item
+              title="Términos y Condiciones"
+              description="Condiciones de uso de la app"
+              left={(props) => <List.Icon {...props} icon="file-document" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => router.push('/terminos-condiciones' as any)}
             />
           </Card.Content>
         </Card>
@@ -212,6 +261,7 @@ const styles = StyleSheet.create({
   divider: {
     marginVertical: 4,
   },
+
   versionContainer: {
     alignItems: 'center',
     paddingVertical: 20,

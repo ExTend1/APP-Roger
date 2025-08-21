@@ -10,6 +10,8 @@ import { useAuthStore } from '@/src/contexts/authStore';
 import { ThemeProvider } from '@/src/contexts/ThemeContext';
 import { PaperThemeProvider } from '@/src/contexts/ThemeProvider';
 import { ReservasProvider } from '@/src/contexts/ReservasContext';
+import { NotificationConfigProvider } from '@/src/contexts/NotificationConfigContext';
+import { useNotifications } from '@/src/hooks/useNotifications';
 
 // Prevenir que el splash screen se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -18,6 +20,9 @@ export default function RootLayout() {
   const { isAuthenticated, isLoading, checkAuthStatus } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
+  
+  // Inicializar sistema de notificaciones
+  useNotifications();
   
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -68,15 +73,21 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <PaperThemeProvider>
-            <ReservasProvider>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="loading" options={{ headerShown: false }} />
-                <Stack.Screen name="login" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="profile-edit" options={{ headerShown: false }} />
-                <Stack.Screen name="+not-found" />
-              </Stack>
-            </ReservasProvider>
+            <NotificationConfigProvider>
+              <ReservasProvider>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="loading" options={{ headerShown: false }} />
+                  <Stack.Screen name="login" options={{ headerShown: false }} />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="profile-edit" options={{ headerShown: false }} />
+                  <Stack.Screen name="politica-privacidad" options={{ headerShown: false }} />
+                  <Stack.Screen name="terminos-condiciones" options={{ headerShown: false }} />
+                  <Stack.Screen name="acercade" options={{ headerShown: false }} />
+                  <Stack.Screen name="centro-ayuda" options={{ headerShown: false }} />
+                  <Stack.Screen name="+not-found" />
+                </Stack>
+              </ReservasProvider>
+            </NotificationConfigProvider>
           </PaperThemeProvider>
         </ThemeProvider>
       </SafeAreaProvider>

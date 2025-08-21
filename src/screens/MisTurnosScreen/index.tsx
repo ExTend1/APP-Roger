@@ -73,10 +73,7 @@ const MisTurnosScreen: React.FC = () => {
     await fetchReservas();
   };
 
-  // Manejadores para los iconos del header
-  const handleBellPress = () => {
-    console.log('🔔 Notificaciones');
-  };
+
 
   // Manejador de cancelación
   const handleCancelar = async (claseId: string, nombreClase: string) => {
@@ -425,9 +422,7 @@ const MisTurnosScreen: React.FC = () => {
       <StatusBar style="light" />
       
       {/* Header personalizado */}
-      <CustomHeader
-        onBellPress={handleBellPress}
-      />
+      <CustomHeader />
 
       {/* Content */}
       <View style={styles.content}>

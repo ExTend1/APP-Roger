@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { IconButton, Text, useTheme } from 'react-native-paper';
 import { SvgXml } from 'react-native-svg';
+import { useRouter } from 'expo-router';
 import { useAuthStore } from '../contexts/authStore';
 
 // Logo SVG como string (el mismo que usamos en login)
@@ -20,19 +21,50 @@ fill="#000000" stroke="none">
 `;
 
 interface CustomHeaderProps {
-  onBellPress?: () => void;
+  title?: string;
+  showBackButton?: boolean;
 }
 
 const CustomHeader: React.FC<CustomHeaderProps> = ({
-  onBellPress,
+  title,
+  showBackButton = false,
 }) => {
   const { user } = useAuthStore();
   const theme = useTheme();
+  const router = useRouter();
 
   // Obtener el nombre del usuario o usar un valor por defecto
   const userName = user?.nombre || 'Usuario';
   const greeting = `Hola, ${userName}`;
   const subtitle = '¡Listo para entrenar!';
+
+  // Si se muestra un título personalizado, no mostrar el saludo
+  if (title) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
+        {/* Botón de retroceso */}
+        {showBackButton && (
+          <IconButton
+            icon="arrow-left"
+            size={28}
+            iconColor={theme.colors.onSurface}
+            onPress={() => router.back()}
+            style={styles.backButton}
+            accessibilityLabel="Volver"
+            accessibilityHint="Toca para volver a la pantalla anterior"
+          />
+        )}
+        
+        {/* Título centrado */}
+        <Text style={[styles.titleText, { color: theme.colors.onSurface }]}>
+          {title}
+        </Text>
+        
+        {/* Espaciador para mantener el título centrado */}
+        {showBackButton && <View style={styles.spacer} />}
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
@@ -56,18 +88,9 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
         </View>
       </View>
 
-      {/* Lado derecho - Iconos de acción */}
+      {/* Lado derecho - Espaciador para mantener el layout */}
       <View style={styles.rightSection}>
-        {/* Icono de notificaciones */}
-        <IconButton
-          icon="bell-outline"
-          size={28}
-          iconColor={theme.colors.onSurfaceVariant}
-          onPress={onBellPress}
-          style={styles.iconButton}
-          accessibilityLabel="Notificaciones"
-          accessibilityHint="Toca para ver tus notificaciones"
-        />
+        <View style={styles.spacer} />
       </View>
     </View>
   );
@@ -117,12 +140,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  iconButton: {
-    marginLeft: 4,
+
+  backButton: {
     minWidth: 48,
     minHeight: 48,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  titleText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  spacer: {
+    width: 48,
   },
 });
 
