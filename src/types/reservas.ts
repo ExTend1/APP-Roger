@@ -83,6 +83,9 @@ export interface ReservarClaseRequest {
 export interface ClaseCardData extends Clase {
   isReservada?: boolean;
   reservaId?: string;
+  cuposDisponibles?: number | null;
+  cuposOcupados?: number;
+  tieneCupoLimitado?: boolean;
 }
 
 export interface ReservaCardData extends ReservaConClase {

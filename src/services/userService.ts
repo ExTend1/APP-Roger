@@ -1,4 +1,19 @@
-import { api } from './api';
+import axios, { AxiosInstance } from 'axios';
+import { API_CONFIG } from '../config/api';
+
+// Crear cliente axios para userService
+const createUserApiClient = (): AxiosInstance => {
+  const client = axios.create({
+    baseURL: API_CONFIG.BASE_URL,
+    timeout: API_CONFIG.TIMEOUT,
+    headers: API_CONFIG.DEFAULT_HEADERS,
+    withCredentials: true,
+  });
+
+  return client;
+};
+
+const userApiClient = createUserApiClient();
 
 export interface User {
   id: string;
@@ -24,7 +39,7 @@ export const userService = {
   async getMyProfile(): Promise<UserResponse> {
     try {
       console.log('🔍 [userService] Getting my profile');
-      const response = await api.get('/users/me/profile');
+      const response = await userApiClient.get('/users/me/profile');
       console.log('✅ [userService] Profile obtained:', response.data);
       return {
         success: true,
@@ -49,7 +64,7 @@ export const userService = {
   }): Promise<UserResponse> {
     try {
       console.log('🔍 [userService] Updating my profile:', profileData);
-      const response = await api.patch('/users/me/profile', profileData);
+      const response = await userApiClient.patch('/users/me/profile', profileData);
       console.log('✅ [userService] Profile updated:', response.data);
       return {
         success: true,

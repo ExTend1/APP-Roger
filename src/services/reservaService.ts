@@ -177,6 +177,40 @@ export const reservaService = {
     }
   },
 
+  // Obtener disponibilidad de cupos de una clase
+  getDisponibilidadCupos: async (claseId: string): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/reservas/clases/${claseId}/disponibilidad`);
+      return response.data;
+    } catch (error: any) {
+      const apiError = handleApiError(error);
+      return {
+        success: false,
+        error: apiError.message,
+        data: null,
+      };
+    }
+  },
+
+  // Obtener tokens del usuario actual
+  getUserTokens: async (accessToken: string): Promise<any> => {
+    try {
+      const response = await apiClient.get('/users/me/tokens', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+      return response.data;
+    } catch (error: any) {
+      const apiError = handleApiError(error);
+      return {
+        success: false,
+        error: apiError.message,
+        data: null,
+      };
+    }
+  },
+
   // Reservar una clase
   reservarClase: async (claseId: string, request: ReservarClaseRequest = {}): Promise<ReservaResponse> => {
     try {

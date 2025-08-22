@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useReducer } from 'react';
-import { reservaService } from '../services/reservaService';
 import NotificationService from '../services/notificationService';
+import { reservaService } from '../services/reservaService';
 import {
   Clase,
   ClaseCardData,
@@ -10,6 +10,7 @@ import {
 } from '../types/reservas';
 import { useAuthStore } from './authStore';
 import { useNotificationConfig } from './NotificationConfigContext';
+import { authService } from '../services/authService';
 
 // Estado del contexto
 interface ReservasState {
@@ -29,6 +30,7 @@ interface ReservasState {
   
   // Error
   error: string | null;
+  userTokens: number; // Agregar estado para tokens del usuario
 }
 
 // Acciones del reducer
@@ -36,16 +38,17 @@ type ReservasAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_RESERVING'; payload: boolean }
   | { type: 'SET_CANCELING'; payload: boolean }
-  | { type: 'SET_CLASES'; payload: Clase[] }
+  | { type: 'SET_CLASES'; payload: ClaseCardData[] }
   | { type: 'SET_RESERVAS'; payload: ReservaConClase[] }
-  | { type: 'SET_SELECTED_CLASE'; payload: Clase | null }
+  | { type: 'SET_SELECTED_CLASE'; payload: ClaseCardData | null }
   | { type: 'SET_SEARCH_TERM'; payload: string }
   | { type: 'SET_SELECTED_TIPO'; payload: string | null }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'CLEAR_ERROR' }
   | { type: 'ADD_RESERVA'; payload: ReservaConClase }
   | { type: 'REMOVE_RESERVA'; payload: string } // claseId
-  | { type: 'UPDATE_CLASE_RESERVA_STATUS'; payload: { claseId: string; isReservada: boolean; reservaId?: string } };
+  | { type: 'UPDATE_CLASE_RESERVA_STATUS'; payload: { claseId: string; isReservada: boolean; reservaId?: string } }
+  | { type: 'SET_USER_TOKENS'; payload: number }; // Nueva acción para tokens
 
 // Estado inicial
 const initialState: ReservasState = {
@@ -58,6 +61,7 @@ const initialState: ReservasState = {
   searchTerm: '',
   selectedTipo: null,
   error: null,
+  userTokens: 0, // Agregar estado para tokens del usuario
 };
 
 // Reducer
@@ -154,6 +158,9 @@ const reservasReducer = (state: ReservasState, action: ReservasAction): Reservas
       );
       return { ...state, clases: clasesConEstadoActualizado };
     
+    case 'SET_USER_TOKENS':
+      return { ...state, userTokens: action.payload };
+    
     default:
       return state;
   }
@@ -219,7 +226,7 @@ const formatReservaCardData = (reserva: ReservaConClase): ReservaCardData => ({
 });
 
 // Contexto
-interface ReservasContextType {
+export interface ReservasContextType {
   // Estado
   state: ReservasState;
   
@@ -232,13 +239,16 @@ interface ReservasContextType {
   // Acciones de UI
   setSearchTerm: (term: string) => void;
   setSelectedTipo: (tipo: string | null) => void;
-  setSelectedClase: (clase: Clase | null) => void;
+  setSelectedClase: (clase: ClaseCardData | null) => void;
   clearError: () => void;
   
   // Getters
   getClasesFiltradas: () => ClaseCardData[];
   getReservasActivas: () => ReservaCardData[];
   isClaseReservada: (claseId: string) => boolean;
+  getDisponibilidadCupos: (claseId: string) => Promise<any>;
+  fetchUserTokens: () => Promise<void>;
+  loadData: () => Promise<void>;
 }
 
 const ReservasContext = createContext<ReservasContextType | undefined>(undefined);
@@ -253,24 +263,147 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
   const { user, isAuthenticated } = useAuthStore();
   const { notificationsEnabled } = useNotificationConfig();
 
-  // Cargar datos automáticamente cuando el usuario esté autenticado
+  // Cargar clases
+  const fetchClases = useCallback(async () => {
+    if (!isAuthenticated || !user) return;
+
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'CLEAR_ERROR' });
+
+    try {
+      const response = await reservaService.getAllClases();
+      
+      if (response.success && response.data) {
+        // Obtener información de cupos para cada clase
+        const clasesConCupos = await Promise.all(
+          response.data.map(async (clase) => {
+            try {
+              const cuposResponse = await reservaService.getDisponibilidadCupos(clase.id);
+              if (cuposResponse.success && cuposResponse.data) {
+                return {
+                  ...clase,
+                  cuposDisponibles: cuposResponse.data.cupos.disponibles,
+                  cuposOcupados: cuposResponse.data.cupos.ocupados,
+                  tieneCupoLimitado: cuposResponse.data.cupos.tieneCupoLimitado,
+                };
+              }
+            } catch (error) {
+              console.warn(`Error al obtener cupos para clase ${clase.id}:`, error);
+            }
+            return clase;
+          })
+        );
+
+        dispatch({ type: 'SET_CLASES', payload: clasesConCupos });
+      } else {
+        dispatch({ type: 'SET_ERROR', payload: response.error || 'Error al cargar clases' });
+      }
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Error de conexión al cargar clases' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, [isAuthenticated, user]);
+
+  // Cargar reservas
+  const fetchReservas = useCallback(async () => {
+    if (!isAuthenticated || !user) return;
+
+    try {
+      const response = await reservaService.getMisReservas();
+      
+      if (response.success && response.data) {
+        dispatch({ type: 'SET_RESERVAS', payload: response.data });
+      }
+    } catch (error) {
+      console.warn('Error al cargar reservas:', error);
+    }
+  }, [isAuthenticated, user]);
+
+  // Obtener disponibilidad de cupos para una clase
+  const getDisponibilidadCupos = useCallback(async (claseId: string) => {
+    try {
+      const response = await reservaService.getDisponibilidadCupos(claseId);
+      return response;
+    } catch (error) {
+      console.warn('Error al obtener disponibilidad de cupos:', error);
+      return null;
+    }
+  }, []);
+
+  // Obtener tokens del usuario actual
+  const fetchUserTokens = useCallback(async () => {
+    if (!isAuthenticated || !user) {
+      console.log('🔍 [fetchUserTokens] Usuario no autenticado o no disponible');
+      return;
+    }
+
+    try {
+      console.log('🔍 [fetchUserTokens] Obteniendo tokens para usuario:', user.id);
+      
+      // Obtener el accessToken del store de autenticación
+      const { useAuthStore } = await import('./authStore');
+      const { getState } = useAuthStore;
+      const authState = getState();
+      const accessToken = authState.accessToken;
+      
+      console.log('🔍 [fetchUserTokens] AccessToken obtenido:', accessToken ? 'SÍ' : 'NO');
+      console.log('🔍 [fetchUserTokens] AccessToken (primeros 20 chars):', accessToken ? accessToken.substring(0, 20) + '...' : 'N/A');
+      
+      if (!accessToken) {
+        console.warn('🔍 [fetchUserTokens] No hay accessToken disponible');
+        return;
+      }
+      
+      // Usar el servicio de reservas con el token
+      const response = await reservaService.getUserTokens(accessToken);
+      
+      console.log('🔍 [fetchUserTokens] Respuesta de la API:', response);
+      
+      if (response.success && response.data) {
+        const tokens = response.data.token || 0;
+        console.log('🔍 [fetchUserTokens] Tokens obtenidos:', tokens);
+        dispatch({ type: 'SET_USER_TOKENS', payload: tokens });
+      } else {
+        console.warn('🔍 [fetchUserTokens] Error en la respuesta:', response.error);
+      }
+    } catch (error) {
+      console.warn('🔍 [fetchUserTokens] Error al obtener tokens:', error);
+    }
+  }, [isAuthenticated, user]);
+
+  // Función para cargar datos iniciales
+  const loadData = useCallback(async () => {
+    if (!isAuthenticated || !user) return;
+    
+    try {
+      await Promise.all([fetchClases(), fetchReservas()]);
+    } catch (error) {
+      console.warn('Error cargando datos iniciales:', error);
+    }
+  }, [isAuthenticated, user, fetchClases, fetchReservas]);
+
+  // Efecto para refrescar tokens automáticamente
   useEffect(() => {
     if (isAuthenticated && user) {
-      const loadInitialData = async () => {
-        try {
-          await Promise.all([fetchClases(), fetchReservas()]);
-        } catch (error) {
-          console.warn('Error cargando datos iniciales:', error);
-        }
-      };
+      // Refrescar tokens inmediatamente
+      fetchUserTokens();
       
-      loadInitialData();
-    } else {
-      // Limpiar datos cuando no hay usuario autenticado
-      dispatch({ type: 'SET_CLASES', payload: [] });
-      dispatch({ type: 'SET_RESERVAS', payload: [] });
+      // Refrescar tokens cada 30 segundos
+      const interval = setInterval(() => {
+        fetchUserTokens();
+      }, 30000);
+      
+      return () => clearInterval(interval);
     }
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, user, fetchUserTokens]);
+
+  // Efecto para cargar datos iniciales
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadData();
+    }
+  }, [isAuthenticated, user, loadData]);
 
   // Programar notificaciones para reservas existentes cuando se cargan
   useEffect(() => {
@@ -302,55 +435,6 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
       scheduleNotificationsForExistingReservas();
     }
   }, [state.reservas, notificationsEnabled]);
-
-  // Acciones de datos
-  const fetchClases = useCallback(async () => {
-    if (!isAuthenticated || !user) {
-      console.warn('No se pueden cargar clases: usuario no autenticado');
-      return;
-    }
-
-    dispatch({ type: 'SET_LOADING', payload: true });
-    dispatch({ type: 'CLEAR_ERROR' });
-    
-    try {
-      const response = await reservaService.getAllClases();
-      
-      if (response.success && response.data) {
-        dispatch({ type: 'SET_CLASES', payload: response.data });
-      } else {
-        dispatch({ type: 'SET_ERROR', payload: response.error || 'Error obteniendo clases' });
-      }
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Error de conexión al obtener clases' });
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, [isAuthenticated, user]);
-
-  const fetchReservas = useCallback(async () => {
-    if (!isAuthenticated || !user) {
-      console.warn('No se pueden cargar reservas: usuario no autenticado');
-      return;
-    }
-
-    dispatch({ type: 'SET_LOADING', payload: true });
-    dispatch({ type: 'CLEAR_ERROR' });
-    
-    try {
-      const response = await reservaService.getMisReservas();
-      
-      if (response.success && response.data) {
-        dispatch({ type: 'SET_RESERVAS', payload: response.data });
-      } else {
-        dispatch({ type: 'SET_ERROR', payload: response.error || 'Error obteniendo reservas' });
-      }
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Error de conexión al obtener reservas' });
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, [isAuthenticated, user]);
 
   const reservarClase = useCallback(async (claseId: string): Promise<boolean> => {
     if (!isAuthenticated || !user) {
@@ -451,7 +535,7 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
     dispatch({ type: 'SET_SELECTED_TIPO', payload: tipo });
   }, []);
 
-  const setSelectedClase = useCallback((clase: Clase | null) => {
+  const setSelectedClase = useCallback((clase: ClaseCardData | null) => {
     dispatch({ type: 'SET_SELECTED_CLASE', payload: clase });
   }, []);
 
@@ -505,6 +589,9 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
     getClasesFiltradas,
     getReservasActivas,
     isClaseReservada,
+    getDisponibilidadCupos,
+    fetchUserTokens,
+    loadData,
   };
 
   return (
@@ -533,6 +620,9 @@ export const useReservas = (): ReservasContextType => {
       getClasesFiltradas: () => [],
       getReservasActivas: () => [],
       isClaseReservada: () => false,
+      getDisponibilidadCupos: async () => null,
+      fetchUserTokens: async () => {},
+      loadData: async () => {},
     };
   }
   return context;

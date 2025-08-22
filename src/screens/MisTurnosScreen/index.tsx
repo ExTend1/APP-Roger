@@ -569,12 +569,12 @@ const MisTurnosScreen: React.FC = () => {
       </View>
 
       {/* FAB para actualizar */}
-      <FAB
+      {/* <FAB
         icon="refresh"
         onPress={loadData}
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         loading={state.isLoading}
-      />
+      /> */}
 
       {/* Snackbar */}
       <Snackbar

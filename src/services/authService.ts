@@ -492,10 +492,10 @@ export const authService = {
       
       const results = {
         baseUrl: API_BASE_URL,
-        rootEndpoint: null,
-        healthEndpoint: null,
-        authEndpoints: [],
-        errors: []
+        rootEndpoint: null as any,
+        healthEndpoint: null as any,
+        authEndpoints: [] as any[],
+        errors: [] as string[]
       };
       
       // 1. Probar endpoint raíz
@@ -603,6 +603,29 @@ export const authService = {
       };
     }
   },
+
+  // Obtener información del usuario actual
+  getCurrentUser: async (): Promise<any> => {
+    try {
+      // Obtener el token del usuario desde el store
+      const userStore = await import('../contexts/authStore');
+      const { useAuthStore } = userStore;
+      
+      // No podemos usar useAuthStore aquí porque es un hook de React
+      // En su lugar, vamos a usar el token que se pasa como parámetro
+      const response = await apiClient.get('/users/me/tokens');
+      return response.data;
+    } catch (error: any) {
+      const apiError = handleApiError(error);
+      return {
+        success: false,
+        error: apiError.message,
+        data: null,
+      };
+    }
+  },
+
+  // Obtener historial de tokens del usuario
 };
 
 export default authService;

@@ -29,7 +29,8 @@ const ClaseDetalleScreen: React.FC = () => {
     setSelectedTipo,
     getClasesFiltradas,
     isClaseReservada,
-    clearError
+    clearError,
+    fetchUserTokens
   } = useReservas();
 
   // Estado local
@@ -44,10 +45,13 @@ const ClaseDetalleScreen: React.FC = () => {
   }, []);
 
   const loadData = async () => {
+    console.log('🔍 [ClaseDetalleScreen] Cargando datos...');
     await Promise.all([
       fetchClases(),
-      fetchReservas()
+      fetchReservas(),
+      fetchUserTokens()
     ]);
+    console.log('🔍 [ClaseDetalleScreen] Datos cargados');
   };
 
   // Generar datos del calendario con colores distintivos
@@ -239,6 +243,15 @@ const ClaseDetalleScreen: React.FC = () => {
     const isReservada = isClaseReservada(clase.id);
     const colorTipo = getColorByTipo(clase.tipo);
     
+    // Verificar si la clase tiene cupos disponibles usando la información real de la API
+    const tieneCuposDisponibles = !clase.tieneCupoLimitado || 
+      (clase.cuposDisponibles !== undefined && clase.cuposDisponibles !== null && clase.cuposDisponibles > 0);
+    
+    // Determinar el estado del botón
+    const botonDeshabilitado = state.isReserving || state.isCanceling || !tieneCuposDisponibles;
+    const textoBoton = isReservada ? 'Cancelar Reserva' : 
+      (tieneCuposDisponibles ? 'Reservar Clase' : 'Sin Cupos');
+    
     return (
       <View style={[styles.claseCard, { backgroundColor: theme.colors.surface }]}>
                   {/* Sección Superior - Gradiente */}
@@ -369,7 +382,9 @@ const ClaseDetalleScreen: React.FC = () => {
              <View style={styles.detailRow}>
                <Text style={[styles.detailIcon, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>👥</Text>
                <Text style={[styles.detailText, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>
-                 {clase.profesor} • {clase.cupo || 12}/{clase.cupo || 12} cupos
+                 {clase.profesor} • {clase.tieneCupoLimitado ? 
+                   `${clase.cuposOcupados || 0}/${clase.cupo} cupos` : 
+                   'Sin límite de cupos'}
                </Text>
              </View>
 
@@ -388,17 +403,18 @@ const ClaseDetalleScreen: React.FC = () => {
               mode="contained"
               onPress={() => handleReservaToggle(clase)}
               loading={state.isReserving || state.isCanceling}
-              disabled={state.isReserving || state.isCanceling}
+              disabled={botonDeshabilitado}
               style={[
                 styles.reservaButton,
                 { 
-                  backgroundColor: isReservada ? '#F54927' : '#7DE34D',
+                  backgroundColor: isReservada ? '#F54927' : 
+                    (tieneCuposDisponibles ? '#7DE34D' : '#9E9E9E'),
                   borderRadius: 12,
                 }
               ]}
               labelStyle={styles.buttonLabel}
             >
-              {isReservada ? 'Cancelar Reserva' : 'Reservar Clase'}
+              {textoBoton}
             </Button>
           </View>
         </View>
@@ -655,12 +671,12 @@ const ClaseDetalleScreen: React.FC = () => {
       </View>
 
       {/* FAB para actualizar */}
-      <FAB
+      {/* <FAB
         icon="refresh"
         onPress={loadData}
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         loading={state.isLoading}
-      />
+      /> */}
 
       {/* Snackbar */}
       <Snackbar

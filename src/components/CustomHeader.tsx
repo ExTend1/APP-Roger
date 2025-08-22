@@ -4,6 +4,7 @@ import { IconButton, Text, useTheme } from 'react-native-paper';
 import { SvgXml } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../contexts/authStore';
+import { useReservas } from '../contexts/ReservasContext';
 
 // Logo SVG como string (el mismo que usamos en login)
 const logoSvg = `
@@ -30,6 +31,7 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
   showBackButton = false,
 }) => {
   const { user } = useAuthStore();
+  const { state } = useReservas();
   const theme = useTheme();
   const router = useRouter();
 
@@ -88,10 +90,28 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
         </View>
       </View>
 
-      {/* Lado derecho - Espaciador para mantener el layout */}
+      {/* Lado derecho - Indicador de tokens */}
       <View style={styles.rightSection}>
-        <View style={styles.spacer} />
+        <View style={[styles.tokenIndicator, { backgroundColor: theme.colors.primary }]}>
+          {/* Ícono de cubo naranja */}
+          <View style={styles.tokenIcon}>
+            <View style={styles.cubeIcon}>
+              {/* Cara principal del cubo */}
+              <View style={styles.cubeFace} />
+              {/* Líneas de conexión */}
+              <View style={styles.cubeLine1} />
+              <View style={styles.cubeLine2} />
+              <View style={styles.cubeLine3} />
+              {/* Punto central */}
+              <View style={styles.cubeCenter} />
+            </View>
+          </View>
+          <Text style={[styles.tokenText, { color: theme.colors.onPrimary }]}>
+            {state.userTokens}
+          </Text>
+        </View>
       </View>
+      
     </View>
   );
 };
@@ -155,6 +175,77 @@ const styles = StyleSheet.create({
   },
   spacer: {
     width: 48,
+  },
+  tokenIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginLeft: 10,
+    minWidth: 60,
+    justifyContent: 'space-between',
+  },
+  tokenText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  tokenIcon: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  cubeIcon: {
+    width: 20,
+    height: 20,
+    position: 'relative',
+  },
+  cubeFace: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 4,
+  },
+  cubeLine1: {
+    position: 'absolute',
+    top: 5,
+    left: 5,
+    width: 10,
+    height: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
+  },
+  cubeLine2: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 10,
+    height: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
+  },
+  cubeLine3: {
+    position: 'absolute',
+    bottom: 5,
+    left: 5,
+    width: 10,
+    height: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
+  },
+  cubeCenter: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 4,
+    height: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
   },
 });
 
