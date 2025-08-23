@@ -23,19 +23,11 @@ export default function TabLayout() {
           tabBarStyle: {
             backgroundColor: theme.colors.surface,
             borderTopColor: theme.colors.outline,
-            // Solución estándar para gesture bar
-            paddingBottom: insets.bottom,
+            borderTopWidth: 1,
+            // Configuración simple sin barra negra
+            paddingBottom: Platform.OS === 'ios' ? 20 : insets.bottom + 8,
             paddingTop: 8,
-            height: 64 + insets.bottom,
-            // Asegurar que esté por encima de la gesture bar
-            elevation: 8,
-            shadowColor: '#000',
-            shadowOffset: {
-              width: 0,
-              height: -2,
-            },
-            shadowOpacity: 0.1,
-            shadowRadius: 3,
+            height: Platform.OS === 'ios' ? 84 : 64 + insets.bottom,
           },
           tabBarLabelStyle: {
             fontSize: 12,
