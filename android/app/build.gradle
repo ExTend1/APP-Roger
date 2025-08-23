@@ -94,6 +94,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
+        
+        // Configuración para la gesture bar y áreas seguras
+        vectorDrawables.useSupportLibrary = true
     }
     signingConfigs {
         debug {

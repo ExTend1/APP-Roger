@@ -1,14 +1,16 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTheme } from 'react-native-paper';
 
 import { HapticTab } from '@/src/components/HapticTab';
+import { useAndroidSafeArea } from '@/src/hooks/useAndroidSafeArea';
 
 export default function TabLayout() {
   const theme = useTheme();
+  const { getBottomPadding, getTabBarHeight, getTabBarStyle } = useAndroidSafeArea();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -19,11 +21,14 @@ export default function TabLayout() {
           headerShown: false,
           tabBarButton: HapticTab,
           tabBarStyle: {
+            ...getTabBarStyle(),
             backgroundColor: theme.colors.surface,
             borderTopColor: theme.colors.outline,
-            paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+            // Ajuste dinámico del padding basado en el dispositivo
+            paddingBottom: getBottomPadding(),
             paddingTop: 8,
-            height: Platform.OS === 'ios' ? 84 : 64,
+            // Altura dinámica que considera la gesture bar
+            height: getTabBarHeight(),
           },
           tabBarLabelStyle: {
             fontSize: 12,

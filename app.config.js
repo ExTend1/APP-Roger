@@ -55,6 +55,15 @@ export default {
         backgroundColor: "#1a1a1a"
       },
       edgeToEdgeEnabled: true,
+      // Configuración para la gesture bar y navegación del sistema
+      navigationBarColor: "transparent",
+      statusBarColor: "transparent",
+      // Configuración para evitar superposición con la gesture bar
+      fitsSystemWindows: true,
+      // Configuración para el tema de la barra de navegación
+      navigationBarStyle: "dark",
+      // Configuración para el color de los iconos de navegación
+      navigationBarIconColor: "#000000",
       splash: {
         image: "./assets/images/splashscreen_logo.png",
         resizeMode: "contain",
