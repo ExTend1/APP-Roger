@@ -12,12 +12,3 @@
 -keep class com.facebook.react.turbomodule.** { *; }
 
 # Add any project specific keep options here:
-
-# Configuraciones para la gesture bar y áreas seguras
--keep class android.view.WindowInsets { *; }
--keep class android.view.WindowInsetsController { *; }
--keep class android.view.View { *; }
--keep class android.view.Window { *; }
-
-# Configuraciones para React Native Safe Area Context
--keep class com.th3rdwave.safeareacontext.** { *; }

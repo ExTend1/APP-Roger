@@ -12,7 +12,6 @@ import { PaperThemeProvider } from '@/src/contexts/ThemeProvider';
 import { ReservasProvider } from '@/src/contexts/ReservasContext';
 import { NotificationConfigProvider } from '@/src/contexts/NotificationConfigContext';
 import { useNotifications } from '@/src/hooks/useNotifications';
-import { GestureBarAwareView } from '@/src/components/GestureBarAwareView';
 
 // Prevenir que el splash screen se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -62,9 +61,6 @@ export default function RootLayout() {
     console.log('🔍 RootLayout - Estado:', { isAuthenticated, isLoading, loaded });
   }, [isAuthenticated, isLoading, loaded]);
 
-  // Log para verificar que ReservasProvider se monta
-
-
   if (!loaded) {
     return null;
   }
@@ -76,19 +72,17 @@ export default function RootLayout() {
           <PaperThemeProvider>
             <NotificationConfigProvider>
               <ReservasProvider>
-                <GestureBarAwareView>
-                  <Stack screenOptions={{ headerShown: false }}>
-                    <Stack.Screen name="loading" options={{ headerShown: false }} />
-                    <Stack.Screen name="login" options={{ headerShown: false }} />
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen name="profile-edit" options={{ headerShown: false }} />
-                    <Stack.Screen name="politica-privacidad" options={{ headerShown: false }} />
-                    <Stack.Screen name="terminos-condiciones" options={{ headerShown: false }} />
-                    <Stack.Screen name="acercade" options={{ headerShown: false }} />
-                    <Stack.Screen name="centro-ayuda" options={{ headerShown: false }} />
-                    <Stack.Screen name="+not-found" />
-                  </Stack>
-                </GestureBarAwareView>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="loading" options={{ headerShown: false }} />
+                  <Stack.Screen name="login" options={{ headerShown: false }} />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="profile-edit" options={{ headerShown: false }} />
+                  <Stack.Screen name="politica-privacidad" options={{ headerShown: false }} />
+                  <Stack.Screen name="terminos-condiciones" options={{ headerShown: false }} />
+                  <Stack.Screen name="acercade" options={{ headerShown: false }} />
+                  <Stack.Screen name="centro-ayuda" options={{ headerShown: false }} />
+                  <Stack.Screen name="+not-found" />
+                </Stack>
               </ReservasProvider>
             </NotificationConfigProvider>
           </PaperThemeProvider>

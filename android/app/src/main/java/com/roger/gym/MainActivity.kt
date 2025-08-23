@@ -3,9 +3,6 @@ import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.view.WindowInsets
-import android.view.WindowInsetsController
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -23,31 +20,7 @@ class MainActivity : ReactActivity() {
     // @generated begin expo-splashscreen - expo prebuild (DO NOT MODIFY) sync-f3ff59a738c56c9a6119210cb55f0b613eb8b6af
     SplashScreenManager.registerOnActivity(this)
     // @generated end expo-splashscreen
-    
-    // Configuración para la gesture bar y áreas seguras
-    setupGestureBarSupport()
-    
     super.onCreate(null)
-  }
-
-  /**
-   * Configuración para manejar la gesture bar y áreas seguras
-   */
-  private fun setupGestureBarSupport() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      // Para Android 11+ (API 30+)
-      window.setDecorFitsSystemWindows(false)
-      
-      // Configurar el comportamiento de la gesture bar
-      window.insetsController?.let { controller ->
-        controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-      }
-    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      // Para Android 5+ (API 21+)
-      window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-          or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-          or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
-    }
   }
 
   /**

@@ -5,9 +5,6 @@
   <uses-permission android:name="android.permission.VIBRATE"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
   
-  <!-- Configuración para la gesture bar -->
-  <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
-  
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW"/>
@@ -23,9 +20,7 @@
     android:roundIcon="@mipmap/ic_launcher_round" 
     android:allowBackup="true" 
     android:theme="@style/AppTheme" 
-    android:supportsRtl="true"
-    android:hardwareAccelerated="true"
-    android:largeHeap="true">
+    android:supportsRtl="true">
     
     <meta-data android:name="expo.modules.updates.ENABLED" android:value="false"/>
     <meta-data android:name="expo.modules.updates.EXPO_UPDATES_CHECK_ON_LAUNCH" android:value="ALWAYS"/>
@@ -38,9 +33,7 @@
       android:windowSoftInputMode="adjustResize" 
       android:theme="@style/AppTheme" 
       android:exported="true" 
-      android:screenOrientation="portrait"
-      android:resizeableActivity="true"
-      android:supportsPictureInPicture="false">
+      android:screenOrientation="portrait">
       
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
