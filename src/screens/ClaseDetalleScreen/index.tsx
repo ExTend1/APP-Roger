@@ -11,7 +11,8 @@ import {
   Text,
   useTheme
 } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import CustomHeader from '../../components/CustomHeader';
 import { SwipeableScreen } from '../../components/SwipeableScreen';
 import { useReservas } from '../../contexts/ReservasContext';
@@ -19,6 +20,7 @@ import { ClaseCardData } from '../../types/reservas';
 
 const ClaseDetalleScreen: React.FC = () => {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { 
     state, 
     fetchClases, 
@@ -45,13 +47,13 @@ const ClaseDetalleScreen: React.FC = () => {
   }, []);
 
   const loadData = async () => {
-    console.log('🔍 [ClaseDetalleScreen] Cargando datos...');
+    console.log('[ClaseDetalleScreen] Cargando datos...');
     await Promise.all([
       fetchClases(),
       fetchReservas(),
       fetchUserTokens()
     ]);
-    console.log('🔍 [ClaseDetalleScreen] Datos cargados');
+    console.log('[ClaseDetalleScreen] Datos cargados');
   };
 
   // Generar datos del calendario con colores distintivos
@@ -120,7 +122,7 @@ const ClaseDetalleScreen: React.FC = () => {
       return clase.dias.some(dia => dia.toLowerCase() === diaSemana.toLowerCase());
     });
     
-    let mensaje = `📅 ${fechaSeleccionada}\n\n`;
+    let mensaje = `${fechaSeleccionada}\n\n`;
     
     if (clasesEnFecha.length > 0) {
       mensaje += `Clases disponibles:\n`;
@@ -171,18 +173,13 @@ const ClaseDetalleScreen: React.FC = () => {
     setSnackbarVisible(true);
   };
 
-  // Obtener emoji según el tipo de clase
-  const getEmojiByTipo = (tipo: string): string => {
-    const emojis: Record<string, string> = {
-      funcional: '🏋️‍♂️',
-      cardio: '🏃‍♂️',
-      fuerza: '💪',
-      yoga: '🧘‍♀️',
-      pilates: '🤸‍♀️',
-      aqua: '🏊‍♀️',
-      baile: '💃',
+  // Obtener icono según el tipo de clase
+  const getIconByTipo = (tipo: string): string => {
+    const iconos: Record<string, string> = {
+      funcional: 'dumbbell',
+      crossfit: 'gymnastics',
     };
-    return emojis[tipo.toLowerCase()] || '🏋️‍♂️';
+    return iconos[tipo.toLowerCase()] || 'dumbbell';
   };
 
   // Obtener imagen según el tipo de clase
@@ -191,8 +188,8 @@ const ClaseDetalleScreen: React.FC = () => {
     
     if (tipoLower === 'crossfit') {
       return require('../../../assets/images/crossfit.png');
-    } else if (tipoLower === 'pilates') {
-      return require('../../../assets/images/pilates.png');
+    } else if (tipoLower === 'funcional') {
+      return require('../../../assets/images/funcional.png');
     }
     
     return null; // Para otros tipos, no mostrar imagen
@@ -202,12 +199,7 @@ const ClaseDetalleScreen: React.FC = () => {
   const getColorByTipo = (tipo: string) => {
     const colors: Record<string, string> = {
       funcional: theme.colors.primary,
-      cardio: '#F44336',
-      fuerza: '#FF9800',
-      yoga: '#4CAF50',
-      pilates: '#2196F3',
-      aqua: '#00BCD4',
-      baile: '#9C27B0',
+      crossfit: '#FF5722',
     };
     return colors[tipo.toLowerCase()] || theme.colors.primary;
   };
@@ -230,12 +222,7 @@ const ClaseDetalleScreen: React.FC = () => {
   const tiposDisponibles = [
     { value: 'todos', label: 'Todas' },
     { value: 'funcional', label: 'Funcional' },
-    { value: 'cardio', label: 'Cardio' },
-    { value: 'fuerza', label: 'Fuerza' },
-    { value: 'yoga', label: 'Yoga' },
-    { value: 'pilates', label: 'Pilates' },
-    { value: 'aqua', label: 'Aqua' },
-    { value: 'baile', label: 'Baile' },
+    { value: 'crossfit', label: 'CrossFit' },
   ];
 
   // Renderizar tarjeta de clase
@@ -261,7 +248,7 @@ const ClaseDetalleScreen: React.FC = () => {
               backgroundColor: theme.dark ? '#2C2C2C' : '#FFFFFF',
             }
           ]}>
-            {/* Background Image para crossfit y pilates */}
+            {/* Background Image para crossfit y funcional */}
             {(() => {
               const claseImage = getImageByTipo(clase.tipo);
               if (claseImage) {
@@ -297,8 +284,8 @@ const ClaseDetalleScreen: React.FC = () => {
                      { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)' }
                    ]}>
                      <View style={styles.photoPlaceholder}>
-                       <Text style={styles.photoPlaceholderText}>
-                         {getEmojiByTipo(clase.tipo)}
+                       <Text style={[styles.photoPlaceholderText, { fontSize: 48 }]}>
+                         {getIconByTipo(clase.tipo)}
                        </Text>
                        <Text style={styles.photoPlaceholderSubtext}>
                          {clase.tipo.charAt(0).toUpperCase() + clase.tipo.slice(1)}
@@ -372,7 +359,7 @@ const ClaseDetalleScreen: React.FC = () => {
           <View style={styles.detailsContainer}>
                          {/* Horario */}
              <View style={styles.detailRow}>
-               <Text style={[styles.detailIcon, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>🕐</Text>
+               <Ionicons name="time" size={20} color={theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)'} style={styles.detailIcon} />
                <Text style={[styles.detailText, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>
                  {clase.horario} • {clase.duracion} min
                </Text>
@@ -380,7 +367,7 @@ const ClaseDetalleScreen: React.FC = () => {
 
              {/* Profesor y cupo */}
              <View style={styles.detailRow}>
-               <Text style={[styles.detailIcon, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>👥</Text>
+               <Ionicons name="people" size={20} color={theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)'} style={styles.detailIcon} />
                <Text style={[styles.detailText, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>
                  {clase.profesor} • {clase.tieneCupoLimitado ? 
                    `${clase.cuposOcupados || 0}/${clase.cupo} cupos` : 
@@ -390,7 +377,7 @@ const ClaseDetalleScreen: React.FC = () => {
 
              {/* Días */}
              <View style={styles.detailRow}>
-               <Text style={[styles.detailIcon, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>📅</Text>
+               <Ionicons name="calendar" size={20} color={theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)'} style={styles.detailIcon} />
                <Text style={[styles.detailText, { color: theme.dark ? 'white' : 'rgba(0, 0, 0, 0.7)' }]}>
                  {formatDias(clase.dias)}
                </Text>
@@ -432,11 +419,12 @@ const ClaseDetalleScreen: React.FC = () => {
     searchContainerDynamic: {
       backgroundColor: theme.colors.background,
     },
-    calendarContainer: {
-      flex: 1,
-      padding: 16,
-      backgroundColor: theme.colors.surface,
-    },
+         calendarContainer: {
+       flex: 1,
+       padding: 16,
+       paddingHorizontal: 20,
+       backgroundColor: theme.colors.surface,
+     },
     calendar: {
       borderRadius: 16,
       overflow: 'hidden',
@@ -449,16 +437,16 @@ const ClaseDetalleScreen: React.FC = () => {
       shadowOpacity: 0.1,
       shadowRadius: 4,
     },
-    calendarLegend: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      marginTop: 20,
-      paddingHorizontal: 10,
-      paddingVertical: 15,
-      backgroundColor: theme.colors.surfaceVariant,
-      borderRadius: 12,
-      marginHorizontal: 10,
-    },
+         calendarLegend: {
+       flexDirection: 'row',
+       justifyContent: 'space-around',
+       marginTop: 20,
+       paddingHorizontal: 10,
+       paddingVertical: 15,
+       backgroundColor: theme.colors.surfaceVariant,
+       borderRadius: 12,
+       marginHorizontal: 20,
+     },
     legendItem: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -473,14 +461,15 @@ const ClaseDetalleScreen: React.FC = () => {
       fontSize: 13,
       fontWeight: '500',
     },
-    calendarInfo: {
-      marginTop: 20,
-      paddingHorizontal: 10,
-      paddingVertical: 15,
-      backgroundColor: theme.colors.surfaceVariant,
-      borderRadius: 12,
-      alignItems: 'center',
-    },
+         calendarInfo: {
+       marginTop: 20,
+       paddingHorizontal: 10,
+       paddingVertical: 15,
+       backgroundColor: theme.colors.surfaceVariant,
+       borderRadius: 12,
+       alignItems: 'center',
+       marginHorizontal: 20,
+     },
     calendarInfoText: {
       fontSize: 14,
       textAlign: 'center',
@@ -490,11 +479,20 @@ const ClaseDetalleScreen: React.FC = () => {
 
   return (
     <SwipeableScreen>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <StatusBar style="light" />
-        
-              {/* Header personalizado */}
-      <CustomHeader />
+             <SafeAreaView 
+         style={[
+           styles.container, 
+           { 
+             backgroundColor: theme.colors.background,
+             paddingBottom: insets.bottom > 0 ? insets.bottom : 20 // Ajuste para Android
+           }
+         ]}
+         edges={['top', 'left', 'right']} // Solo aplicar safe area en la parte superior y laterales
+       >
+         <StatusBar style="light" />
+         
+         {/* Header personalizado */}
+         <CustomHeader />
 
         {/* Contenido principal */}
         <View style={styles.content}>
@@ -523,12 +521,12 @@ const ClaseDetalleScreen: React.FC = () => {
             onPress={() => setViewMode(viewMode === 'list' ? 'calendar' : 'list')}
           >
             <View style={styles.dateSelectorContent}>
-              <Text style={[
-                styles.dateSelectorIcon,
-                { color: theme.dark ? '#FF6B6B' : '#E74C3C' }
-              ]}>
-                {viewMode === 'list' ? '📅' : '📋'}
-              </Text>
+              <Ionicons 
+                name={viewMode === 'list' ? 'calendar' : 'list'} 
+                size={20} 
+                color={theme.dark ? '#FF6B6B' : '#E74C3C'} 
+                style={styles.dateSelectorIcon} 
+              />
               <View style={styles.dateSelectorTextContainer}>
               </View>
             </View>
@@ -635,12 +633,18 @@ const ClaseDetalleScreen: React.FC = () => {
             
             {/* Información adicional del calendario */}
             <View style={calendarStyles.calendarInfo}>
-              <Text style={[calendarStyles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
-                💡 Toca una fecha para ver las clases del día
-              </Text>
-              <Text style={[calendarStyles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
-                📅 El calendario muestra las próximas 4 semanas
-              </Text>
+              <View style={styles.calendarInfoRow}>
+                <Ionicons name="bulb" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
+                <Text style={[calendarStyles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
+                  Toca una fecha para ver las clases del día
+                </Text>
+              </View>
+                              <View style={styles.calendarInfoRow}>
+                  <Ionicons name="calendar" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
+                  <Text style={[calendarStyles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
+                    El calendario muestra las próximas 4 semanas
+                  </Text>
+                </View>
             </View>
           </View>
         ) : clasesFiltradas.length > 0 ? (
@@ -660,9 +664,12 @@ const ClaseDetalleScreen: React.FC = () => {
           />
         ) : (
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
-              🏋️‍♂️ No se encontraron clases
-            </Text>
+            <View style={styles.emptyContent}>
+              <Ionicons name="fitness" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
+              <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
+                No se encontraron clases
+              </Text>
+            </View>
             <Text style={[styles.emptySubtext, { color: theme.colors.onSurfaceVariant }]}>
               Intenta ajustar los filtros de búsqueda
             </Text>
@@ -670,13 +677,20 @@ const ClaseDetalleScreen: React.FC = () => {
         )}
       </View>
 
-      {/* FAB para actualizar */}
-      {/* <FAB
-        icon="refresh"
-        onPress={loadData}
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        loading={state.isLoading}
-      /> */}
+             {/* FAB para navegación y actualización */}
+       <FAB
+         icon="refresh"
+         onPress={loadData}
+         style={[
+           styles.fab, 
+           { 
+             backgroundColor: theme.colors.primary,
+             bottom: insets.bottom > 0 ? insets.bottom + 16 : 32 // Ajuste para Android
+           }
+         ]}
+         loading={state.isLoading}
+         label="Actualizar"
+       />
 
       {/* Snackbar */}
       <Snackbar
@@ -974,13 +988,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.7,
   },
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
-    borderRadius: 16,
-  },
+     fab: {
+     position: 'absolute',
+     margin: 16,
+     right: 16,
+     borderRadius: 16,
+     elevation: 8, // Sombra para Android
+     shadowColor: '#000', // Sombra para iOS
+     shadowOffset: {
+       width: 0,
+       height: 4,
+     },
+     shadowOpacity: 0.3,
+     shadowRadius: 8,
+   },
   snackbar: {
     marginBottom: 16,
   },
@@ -1017,6 +1038,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  calendarInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  emptyContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 8,
   },
 

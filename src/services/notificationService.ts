@@ -43,10 +43,35 @@ export class NotificationService {
         return false;
       }
       
+      // Crear canal de notificaciones para Android
+      if (Platform.OS === 'android') {
+        await this.createNotificationChannel();
+      }
+      
       return true;
     } else {
       console.log('Las notificaciones push solo funcionan en dispositivos físicos');
       return false;
+    }
+  }
+
+  // Crear canal de notificaciones para Android
+  private async createNotificationChannel(): Promise<void> {
+    if (Platform.OS === 'android') {
+      try {
+        await Notifications.setNotificationChannelAsync('class_reminders', {
+          name: 'Recordatorios de Clases',
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FFD700',
+          sound: 'default',
+          enableVibrate: true,
+          showBadge: true,
+        });
+        console.log('✅ Canal de notificaciones creado para Android');
+      } catch (error) {
+        console.error('❌ Error al crear canal de notificaciones:', error);
+      }
     }
   }
 
@@ -76,9 +101,10 @@ export class NotificationService {
       // Programar notificación 1 hora antes
       const reminderTime = new Date(claseDate.getTime() - 60 * 60 * 1000); // 1 hora antes
       
-      // Solo programar si la notificación es en el futuro
-      if (reminderTime <= new Date()) {
-        console.log('La clase ya pasó o es muy pronto para programar notificación');
+      // Validación adicional: solo programar si la notificación es al menos 30 minutos en el futuro
+      const minTime = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos mínimo
+      if (reminderTime <= minTime) {
+        console.log(`La notificación sería muy pronto (${reminderTime.toLocaleString()}), se requiere al menos 30 min de anticipación`);
         return null;
       }
 
@@ -88,12 +114,12 @@ export class NotificationService {
       // Cancelar notificación existente si existe
       await this.cancelClassReminder(reserva.claseId);
 
-      // Programar nueva notificación
+      // Programar nueva notificación con trigger más robusto
       const scheduledNotificationId = await Notifications.scheduleNotificationAsync({
         identifier: notificationId,
         content: {
           title: `Recordatorio: ${reserva.clase.nombre}`,
-          body: `Tu clase comienza en 1 hora. ${reserva.clase.profesor} - ${reserva.clase.sala || 'Sala por confirmar'}`,
+          body: `Tu clase comienza en 1 hora. ${reserva.clase.profesor}`,
           sound: true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
           data: {
@@ -105,16 +131,21 @@ export class NotificationService {
         },
         trigger: {
           date: reminderTime,
-        } as Notifications.DateTriggerInput,
+          channelId: 'class_reminders', // Canal específico para Android
+        },
       });
 
       // Guardar el ID de la notificación
       this.notificationIds.set(reserva.claseId, scheduledNotificationId);
       
-      console.log(`Notificación programada para ${reserva.clase.nombre} en ${reminderTime.toLocaleString()}`);
+      console.log(`✅ Notificación programada para ${reserva.clase.nombre}`);
+      console.log(`   📅 Clase: ${claseDate.toLocaleString()}`);
+      console.log(`   ⏰ Recordatorio: ${reminderTime.toLocaleString()}`);
+      console.log(`   🆔 ID: ${scheduledNotificationId}`);
+      
       return scheduledNotificationId;
     } catch (error) {
-      console.error('Error al programar notificación de clase:', error);
+      console.error('❌ Error al programar notificación de clase:', error);
       return null;
     }
   }
@@ -152,9 +183,20 @@ export class NotificationService {
   // Obtener todas las notificaciones programadas
   async getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
     try {
-      return await Notifications.getAllScheduledNotificationsAsync();
+      const notifications = await Notifications.getAllScheduledNotificationsAsync();
+      console.log(`📱 Notificaciones programadas: ${notifications.length}`);
+      notifications.forEach((notification, index) => {
+        if (notification.trigger && 'date' in notification.trigger && notification.trigger.date) {
+          const triggerDate = new Date(notification.trigger.date);
+          const now = new Date();
+          const timeUntil = triggerDate.getTime() - now.getTime();
+          const minutesUntil = Math.floor(timeUntil / (1000 * 60));
+          console.log(`   ${index + 1}. ${notification.content.title} - En ${minutesUntil} minutos (${triggerDate.toLocaleString()})`);
+        }
+      });
+      return notifications;
     } catch (error) {
-      console.error('Error al obtener notificaciones programadas:', error);
+      console.error('❌ Error al obtener notificaciones programadas:', error);
       return [];
     }
   }
@@ -249,6 +291,34 @@ export class NotificationService {
     listener: (response: Notifications.NotificationResponse) => void
   ): Notifications.Subscription {
     return Notifications.addNotificationResponseReceivedListener(listener);
+  }
+
+  // Método de prueba para verificar notificaciones (solo para desarrollo)
+  async testNotification(): Promise<string | null> {
+    try {
+      const testTime = new Date(Date.now() + 10 * 1000); // 10 segundos en el futuro
+      
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        identifier: 'test_notification',
+        content: {
+          title: '🧪 Prueba de Notificación',
+          body: 'Esta es una notificación de prueba para verificar que el sistema funciona correctamente.',
+          sound: true,
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+          data: { test: true },
+        },
+        trigger: {
+          date: testTime,
+          channelId: 'class_reminders',
+        },
+      });
+      
+      console.log(`🧪 Notificación de prueba programada para ${testTime.toLocaleString()}`);
+      return notificationId;
+    } catch (error) {
+      console.error('❌ Error al programar notificación de prueba:', error);
+      return null;
+    }
   }
 }
 

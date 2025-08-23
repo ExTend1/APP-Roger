@@ -12,6 +12,7 @@ import {
   useTheme
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import CustomHeader from '../../components/CustomHeader';
 import { useReservas } from '../../contexts/ReservasContext';
 import { ReservaCardData } from '../../types/reservas';
@@ -107,30 +108,20 @@ const MisTurnosScreen: React.FC = () => {
     setExpandedCards(newExpanded);
   };
 
-  // Obtener emoji según el tipo de clase
-  const getEmojiByTipo = (tipo: string): string => {
-    const emojis: Record<string, string> = {
-      funcional: '🏋️‍♂️',
-      cardio: '🏃‍♂️',
-      fuerza: '💪',
-      yoga: '🧘‍♀️',
-      pilates: '🤸‍♀️',
-      aqua: '🏊‍♀️',
-      baile: '💃',
+  // Obtener icono según el tipo de clase
+  const getIconByTipo = (tipo: string): string => {
+    const iconos: Record<string, string> = {
+      funcional: 'dumbbell',
+      crossfit: 'gymnastics',
     };
-    return emojis[tipo.toLowerCase()] || '🏋️‍♂️';
+    return iconos[tipo.toLowerCase()] || 'dumbbell';
   };
 
   // Obtener color según el tipo de clase
   const getColorByTipo = (tipo: string) => {
     const colors: Record<string, string> = {
       funcional: theme.colors.primary,
-      cardio: '#F44336',
-      fuerza: '#FF9800',
-      yoga: '#4CAF50',
-      pilates: '#2196F3',
-      aqua: '#00BCD4',
-      baile: '#9C27B0',
+      crossfit: '#FF5722',
     };
     return colors[tipo.toLowerCase()] || theme.colors.primary;
   };
@@ -232,10 +223,10 @@ const MisTurnosScreen: React.FC = () => {
       return clase.dias.some(dia => dia.toLowerCase() === diaSemana.toLowerCase());
     });
     
-    let mensaje = `📅 ${fechaSeleccionada}\n\n`;
+    let mensaje = `${fechaSeleccionada}\n\n`;
     
     if (reservasEnFecha.length > 0) {
-      mensaje += `🟢 Clases reservadas:\n`;
+      mensaje += `Clases reservadas:\n`;
       reservasEnFecha.forEach(reserva => {
         mensaje += `• ${reserva.clase.nombre} - ${reserva.clase.horario}\n`;
       });
@@ -243,7 +234,7 @@ const MisTurnosScreen: React.FC = () => {
     }
     
     if (clasesEnFecha.length > 0) {
-      mensaje += `🔵 Clases disponibles:\n`;
+      mensaje += `Clases disponibles:\n`;
       clasesEnFecha.forEach(clase => {
         const estaReservada = reservasEnFecha.some(r => r.claseId === clase.id);
         const estado = estaReservada ? ' (Reservada)' : '';
@@ -323,9 +314,12 @@ const MisTurnosScreen: React.FC = () => {
               {/* Información de tiempo */}
               <View style={styles.tiempoContainer}>
                 <View style={styles.tiempoInfo}>
-                  <Text style={[styles.tiempoLabel, { color: theme.colors.primary, fontWeight: '600' }]}>
-                    📅 {diasRestantes.texto}
-                  </Text>
+                  <View style={styles.tiempoLabelContainer}>
+                    <Ionicons name="calendar" size={16} color={theme.colors.primary} style={{ marginRight: 4 }} />
+                    <Text style={[styles.tiempoLabel, { color: theme.colors.primary, fontWeight: '600' }]}>
+                      {diasRestantes.texto}
+                    </Text>
+                  </View>
                   <Text style={[styles.fechaCompleta, { color: theme.colors.onSurfaceVariant }]}>
                     {reserva.fechaFormateada}
                   </Text>
@@ -343,28 +337,28 @@ const MisTurnosScreen: React.FC = () => {
               {/* Detalles completos de la clase */}
               <View style={styles.detallesContainer}>
                 <View style={styles.detalleRow}>
-                  <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>👨‍🏫</Text>
+                  <Ionicons name="person" size={20} color={theme.colors.primary} style={styles.detalleIcon} />
                   <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant, fontWeight: '500' }]}>
                     {reserva.clase.profesor}
                   </Text>
                 </View>
                 
                 <View style={styles.detalleRow}>
-                  <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>⏰</Text>
+                  <Ionicons name="time" size={20} color={theme.colors.primary} style={styles.detalleIcon} />
                   <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant }]}>
                     {reserva.clase.horario} • {reserva.clase.duracion} min
                   </Text>
                 </View>
                 
                 <View style={styles.detalleRow}>
-                  <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>🗓️</Text>
+                  <Ionicons name="calendar" size={20} color={theme.colors.primary} style={styles.detalleIcon} />
                   <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant }]}>
                     {reserva.diasTexto}
                   </Text>
                 </View>
 
                 <View style={styles.detalleRow}>
-                  <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>🏷️</Text>
+                  <Ionicons name="pricetag" size={20} color={theme.colors.primary} style={styles.detalleIcon} />
                   <Text style={[styles.detalleTexto, { color: theme.colors.onSurfaceVariant }]}>
                     Tipo: {reserva.clase.tipo.charAt(0).toUpperCase() + reserva.clase.tipo.slice(1)}
                   </Text>
@@ -373,7 +367,7 @@ const MisTurnosScreen: React.FC = () => {
                 {/* Descripción de la clase */}
                 {reserva.clase.descripcion && (
                   <View style={styles.descripcionContainer}>
-                    <Text style={[styles.detalleIcon, { color: theme.colors.primary }]}>📝</Text>
+                    <Ionicons name="document-text" size={20} color={theme.colors.primary} style={styles.detalleIcon} />
                     <Text style={[styles.descripcionTexto, { color: theme.colors.onSurfaceVariant }]}>
                       {reserva.clase.descripcion}
                     </Text>
@@ -446,12 +440,15 @@ const MisTurnosScreen: React.FC = () => {
               ]}
               onPress={() => setViewMode('cards')}
             >
-              <Text style={[
-                viewToggleStyles.viewToggleText,
-                viewMode === 'cards' && viewToggleStyles.viewToggleTextActive
-              ]}>
-                📋 Lista
-              </Text>
+                             <View style={styles.viewToggleContent}>
+                 <Ionicons name="list" size={16} color={viewMode === 'cards' ? theme.colors.primary : theme.colors.onSurface} style={{ marginRight: 4 }} />
+                 <Text style={[
+                   viewToggleStyles.viewToggleText,
+                   viewMode === 'cards' && viewToggleStyles.viewToggleTextActive
+                 ]}>
+                   Lista
+                 </Text>
+               </View>
             </TouchableOpacity>
             
             <TouchableOpacity
@@ -461,12 +458,15 @@ const MisTurnosScreen: React.FC = () => {
               ]}
               onPress={() => setViewMode('calendar')}
             >
-              <Text style={[
-                viewToggleStyles.viewToggleText,
-                viewMode === 'calendar' && viewToggleStyles.viewToggleTextActive
-              ]}>
-                📅 Calendario
-              </Text>
+              <View style={styles.viewToggleContent}>
+                <Ionicons name="calendar" size={16} color={viewMode === 'calendar' ? theme.colors.primary : theme.colors.onSurface} style={{ marginRight: 4 }} />
+                <Text style={[
+                  viewToggleStyles.viewToggleText,
+                  viewMode === 'calendar' && viewToggleStyles.viewToggleTextActive
+                ]}>
+                  Calendario
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -544,23 +544,32 @@ const MisTurnosScreen: React.FC = () => {
               
               {/* Información del calendario */}
               <View style={styles.calendarInfo}>
-                <Text style={[styles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
-                  📅 Visualiza todas las clases en el calendario
-                </Text>
+                <View style={styles.calendarInfoRow}>
+                  <Ionicons name="calendar" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
+                  <Text style={[styles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
+                    Visualiza todas las clases en el calendario
+                  </Text>
+                </View>
                 <Text style={[styles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
                   Verde: clases reservadas • Celeste: clases disponibles para reservar
                 </Text>
-                <Text style={[styles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
-                  💡 Toca una fecha para ver las clases del día
-                </Text>
+                <View style={styles.calendarInfoRow}>
+                  <Ionicons name="bulb" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
+                  <Text style={[styles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
+                    Toca una fecha para ver las clases del día
+                  </Text>
+                </View>
               </View>
             </View>
           )
         ) : (
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
-              📅 No tienes reservas activas
-            </Text>
+            <View style={styles.emptyContent}>
+              <Ionicons name="calendar" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
+              <Text style={[styles.emptyText, { color: 'black' }]}>
+                No tienes reservas activas
+              </Text>
+            </View>
             <Text style={[styles.emptySubtext, { color: theme.colors.onSurfaceVariant }]}>
               ¡Ve a "Clases" para reservar tu primera actividad!
             </Text>
@@ -751,10 +760,14 @@ const styles = StyleSheet.create({
   tiempoInfo: {
     flex: 1,
   },
+  tiempoLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
   tiempoLabel: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 2,
   },
   fechaCompleta: {
     fontSize: 13,
@@ -782,9 +795,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   detalleIcon: {
-    fontSize: 16,
     marginRight: 8,
     width: 20,
+    height: 20,
   },
   detalleTexto: {
     fontSize: 14,
@@ -887,6 +900,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  viewToggleContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  calendarInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  emptyContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
 
 

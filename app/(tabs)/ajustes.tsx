@@ -119,6 +119,7 @@ export default function AjustesScreen() {
                 />
               )}
             />
+
           </Card.Content>
         </Card>
 

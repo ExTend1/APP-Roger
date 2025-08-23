@@ -56,34 +56,18 @@ const HomeScreen: React.FC = () => {
 
   // Función para obtener el icono según el tipo de clase
   const getIconByTipo = (tipo: string): string => {
-    const icons: { [key: string]: string } = {
-      'YOGA': 'human-handsup',
-      'PILATES': 'human-handsup',
-      'SPINNING': 'bike',
+    const iconos: { [key: string]: string } = {
       'FUNCIONAL': 'dumbbell',
-      'ZUMBA': 'music',
-      'BOXEO': 'hand-back-right',
-      'NATACION': 'swim',
-      'CROSSFIT': 'dumbbell',
-      'DANZA': 'music-note',
-      'MEDITACION': 'human-handsup',
+      'CROSSFIT': 'gymnastics',
     };
-    return icons[tipo] || 'dumbbell';
+    return iconos[tipo] || 'dumbbell';
   };
 
   // Función para obtener el color según el tipo de clase
   const getColorByTipo = (tipo: string): string => {
     const colores: { [key: string]: string } = {
-      'YOGA': '#9C27B0',
-      'PILATES': '#FF9800',
-      'SPINNING': '#2196F3',
       'FUNCIONAL': '#4CAF50',
-      'ZUMBA': '#E91E63',
-      'BOXEO': '#F44336',
-      'NATACION': '#00BCD4',
-      'CROSSFIT': '#795548',
-      'DANZA': '#FF5722',
-      'MEDITACION': '#607D8B',
+      'CROSSFIT': '#FF5722',
     };
     return colores[tipo] || '#666666';
   };
