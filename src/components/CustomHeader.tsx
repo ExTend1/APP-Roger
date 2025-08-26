@@ -1,8 +1,8 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { IconButton, Text, useTheme } from 'react-native-paper';
 import { SvgXml } from 'react-native-svg';
-import { useRouter } from 'expo-router';
 import { useAuthStore } from '../contexts/authStore';
 import { useReservas } from '../contexts/ReservasContext';
 
@@ -92,21 +92,16 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
 
       {/* Lado derecho - Indicador de tokens */}
       <View style={styles.rightSection}>
-        <View style={[styles.tokenIndicator, { backgroundColor: theme.colors.primary }]}>
-          {/* Ícono de cubo naranja */}
+        <View style={styles.tokenIndicator}>
+          {/* Imagen del token */}
           <View style={styles.tokenIcon}>
-            <View style={styles.cubeIcon}>
-              {/* Cara principal del cubo */}
-              <View style={styles.cubeFace} />
-              {/* Líneas de conexión */}
-              <View style={styles.cubeLine1} />
-              <View style={styles.cubeLine2} />
-              <View style={styles.cubeLine3} />
-              {/* Punto central */}
-              <View style={styles.cubeCenter} />
-            </View>
+            <Image 
+              source={require('../../assets/images/RogerToken.webp')}
+              style={styles.tokenImage}
+              resizeMode="contain"
+            />
           </View>
-          <Text style={[styles.tokenText, { color: theme.colors.onPrimary }]}>
+          <Text style={[styles.tokenText, { color: theme.colors.onSurface }]}>
             {state.userTokens}
           </Text>
         </View>
@@ -179,11 +174,10 @@ const styles = StyleSheet.create({
   tokenIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     marginLeft: 10,
-    minWidth: 60,
+    minWidth: 70,
     justifyContent: 'space-between',
   },
   tokenText: {
@@ -191,61 +185,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   tokenIcon: {
-    width: 24,
-    height: 24,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 4,
   },
-  cubeIcon: {
-    width: 20,
-    height: 20,
-    position: 'relative',
-  },
-  cubeFace: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 4,
-  },
-  cubeLine1: {
-    position: 'absolute',
-    top: 5,
-    left: 5,
-    width: 10,
-    height: 10,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 2,
-  },
-  cubeLine2: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    width: 10,
-    height: 10,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 2,
-  },
-  cubeLine3: {
-    position: 'absolute',
-    bottom: 5,
-    left: 5,
-    width: 10,
-    height: 10,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 2,
-  },
-  cubeCenter: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    width: 4,
-    height: 4,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 2,
+  tokenImage: {
+    width: 36,
+    height: 36,
   },
 });
 

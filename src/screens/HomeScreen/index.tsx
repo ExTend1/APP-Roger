@@ -20,6 +20,18 @@ const HomeScreen: React.FC = () => {
   const [proximaClase, setProximaClase] = useState<NextClassInfo | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Array de imágenes para alternar aleatoriamente
+  const coachImages = [
+    require('../../../assets/images/profe.webp'),
+    require('../../../assets/images/ezo.webp')
+  ];
+
+  // Estado para la imagen seleccionada aleatoriamente
+  const [selectedCoachImage, setSelectedCoachImage] = useState(() => {
+    const randomIndex = Math.floor(Math.random() * coachImages.length);
+    return coachImages[randomIndex];
+  });
+
   // Función para refrescar datos
   const onRefresh = useCallback(async () => {
     if (!user) return;
@@ -27,12 +39,15 @@ const HomeScreen: React.FC = () => {
     setRefreshing(true);
     try {
       await Promise.all([fetchClases(), fetchReservas()]);
+      // Seleccionar nueva imagen aleatoria al refrescar
+      const randomIndex = Math.floor(Math.random() * coachImages.length);
+      setSelectedCoachImage(coachImages[randomIndex]);
     } catch (error) {
       console.warn('Error refrescando datos:', error);
     } finally {
       setRefreshing(false);
     }
-  }, [fetchClases, fetchReservas, user]);
+  }, [fetchClases, fetchReservas, user, coachImages]);
 
   // Cargar datos al montar el componente y cuando cambie el usuario
   useEffect(() => {
@@ -209,9 +224,9 @@ const HomeScreen: React.FC = () => {
                 {/* Imagen que se sale del contenedor */}
                 <View style={styles.imageContainer}>
                   <Image 
-                    source={require('../../../assets/images/coach (1).png')}
+                    source={selectedCoachImage}
                     style={styles.workoutImage}
-                    resizeMode="cover"
+                    resizeMode="contain"
                     accessibilityLabel="Ilustración de persona haciendo ejercicio"
                   />
                   {/* Círculos de fondo para efecto dinámico */}
@@ -304,7 +319,7 @@ const HomeScreen: React.FC = () => {
               >
                 <View style={styles.reservasContent}>
                   <View style={styles.reservasTextContainer}>
-                    <Text style={styles.reservasTitle}>Mis <Text style={{color: 'black', fontSize: 28, fontWeight: 'bold'}}>Reservas</Text></Text>
+                                         <Text style={styles.reservasTitle}>Mis Reservas</Text>
                     <Text style={styles.reservasSubtitle}>
                       {state.isLoading ? 'Cargando...' : `${reservasActivas.length} reservas activas`}
                     </Text>
@@ -653,10 +668,11 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: 200,
     height: 200,
-    overflow: 'hidden',
-    marginRight: -50, // Para que se salga más del contenedor
-    marginTop: -30,
-    marginBottom: -47,
+    overflow: 'visible',
+    marginRight: -30,
+    marginTop: 0,
+    marginBottom: -30,
+    alignSelf: 'flex-end',
   },
   workoutImage: {
     width: '100%',
@@ -753,8 +769,9 @@ const styles = StyleSheet.create({
     flex: 1,
     zIndex: 2,
     alignItems: 'center',
-    justifyContent: 'flex-start', // Cambiado para mejor distribución del contenido
-    paddingVertical: 5,
+    justifyContent: 'center', // Centrado vertical
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   reservasLabel: {
     fontSize: 14,
@@ -783,15 +800,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   reservasTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: 'black',
     marginBottom: 4,
     textAlign: 'center',
   },
   reservasSubtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'black',
     marginBottom: 8,
     textAlign: 'center',
     flexWrap: 'wrap', // Permite que el texto se ajuste
