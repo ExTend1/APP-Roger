@@ -9,6 +9,21 @@ export default {
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     
+    // Configuración de splash screen
+    splash: {
+      image: "./assets/images/splashscreen_logo.png",
+      resizeMode: "contain",
+      backgroundColor: "#1a1a1a"
+    },
+    
+    // Configuración de EAS
+    owner: "martiinvan",
+    extra: {
+      eas: {
+        projectId: "5d24f8fe-6c24-4dbf-8d4f-3f8869f08595"
+      }
+    },
+    
     // Configuración de iOS
     ios: {
       supportsTablet: true,
@@ -50,6 +65,7 @@ export default {
     // Configuración de Android
     android: {
       package: "com.roger.gym",
+      versionCode: 1, // Incrementar en cada release
       adaptiveIcon: {
         foregroundImage: "./assets/images/logo.png",
         backgroundColor: "#1a1a1a"
@@ -59,7 +75,7 @@ export default {
         resizeMode: "contain",
         backgroundColor: "#1a1a1a"
       },
-      // Permisos de Android
+      // Permisos de Android - solo los necesarios
       permissions: [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
@@ -99,7 +115,9 @@ export default {
           icon: "./assets/images/logo.png",
           color: "#FFD700"
         }
-      ]
+      ],
+      // Plugin para optimizar builds
+      "expo-build-properties"
     ],
     
     // Configuración de notificaciones
@@ -117,7 +135,7 @@ export default {
     // Configuración de actualizaciones
     updates: {
       fallbackToCacheTimeout: 0,
-      url: "https://u.expo.dev/your-project-id"
+      url: "https://u.expo.dev/5d24f8fe-6c24-4dbf-8d4f-3f8869f08595"
     },
     
     // Configuración de runtime
