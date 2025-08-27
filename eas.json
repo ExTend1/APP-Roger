@@ -10,6 +10,11 @@
         "buildType": "apk"
       }
     },
+    "release": {
+      "android": {
+        "buildType": "app-bundle"
+      }
+    },
     "preview": {
       "distribution": "internal",
       "android": {
