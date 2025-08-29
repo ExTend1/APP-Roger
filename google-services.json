@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "365225287057",
+    "project_id": "rogerapp-ac92c",
+    "storage_bucket": "rogerapp-ac92c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:365225287057:android:6367ea2da02b9249de8e30",
+        "android_client_info": {
+          "package_name": "com.roger.gym"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBq3GZa94fOrCrpzaj5SYWYLIbvbukazuA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
