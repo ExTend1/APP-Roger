@@ -17,7 +17,12 @@
   "submit": {
     "production": {
       "android": { "track": "internal" },
-      "ios": { "appleId": "valechauq@gmail.com" }
+      "ios": {
+        "ascAppId": "6752305264",
+        "ascApiKeyPath": "./AuthKey_FT5DWD9XD4.p8",
+        "ascApiKeyId": "FT5DWD9XD4",
+        "ascApiIssuerId": "8ca55132-b806-41e8-af93-7caf9f1db82e"
+      }
     }
   }
 }
