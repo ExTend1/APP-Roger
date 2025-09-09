@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { API_CONFIG } from '../config/api';
+import { useAuthStore } from '../contexts/authStore';
 
 // Crear cliente axios para userService
 const createUserApiClient = (): AxiosInstance => {
@@ -9,6 +10,46 @@ const createUserApiClient = (): AxiosInstance => {
     headers: API_CONFIG.DEFAULT_HEADERS,
     withCredentials: true,
   });
+
+  // Interceptor para requests - agregar token de autenticación
+  client.interceptors.request.use(
+    (config) => {
+      // Obtener el token del authStore
+      const { accessToken } = useAuthStore.getState();
+      if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
+      
+      console.log(`🌐 UserService API Request: ${config.method?.toUpperCase()} ${config.url}`);
+      console.log(`🔗 UserService URL completa: ${config.baseURL}${config.url}`);
+      console.log(`📋 UserService Headers:`, config.headers);
+      
+      return config;
+    },
+    (error) => {
+      console.error('❌ UserService Request Error:', error);
+      return Promise.reject(error);
+    }
+  );
+
+  // Interceptor para responses
+  client.interceptors.response.use(
+    (response) => {
+      console.log(`✅ UserService API Response: ${response.status} ${response.config.url}`);
+      return response;
+    },
+    (error) => {
+      console.error('❌ UserService Response Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.error || error.message,
+        url: error.config?.url,
+        code: error.code,
+        isNetworkError: !error.response,
+      });
+      
+      return Promise.reject(error);
+    }
+  );
 
   return client;
 };
