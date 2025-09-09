@@ -14,7 +14,7 @@ export default {
       backgroundColor: "#1a1a1a"
     },
 
-    owner: "jjuanbaez",
+    owner: "martiinvan",
     extra: {
       eas: {
         projectId: "5d24f8fe-6c24-4dbf-8d4f-3f8869f08595"

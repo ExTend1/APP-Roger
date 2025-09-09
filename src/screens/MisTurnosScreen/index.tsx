@@ -1,18 +1,16 @@
+import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Calendar, DateData } from 'react-native-calendars';
 import {
-  ActivityIndicator,
-  Button,
-  Card,
-  FAB,
-  Snackbar,
-  Text,
-  useTheme
+    ActivityIndicator,
+    Button,
+    Card,
+    Snackbar,
+    Text,
+    useTheme
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import CustomHeader from '../../components/CustomHeader';
 import { useReservas } from '../../contexts/ReservasContext';
 import { ReservaCardData } from '../../types/reservas';
@@ -33,37 +31,7 @@ const MisTurnosScreen: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarType, setSnackbarType] = useState<'success' | 'error'>('success');
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'cards' | 'calendar'>('cards');
 
-  // Crear estilos dinámicos para el viewToggle
-  const viewToggleStyles = StyleSheet.create({
-    viewToggleContainer: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      marginBottom: 16,
-      paddingHorizontal: 16,
-    },
-    viewToggleButton: {
-      paddingVertical: 8,
-      paddingHorizontal: 16,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: 'transparent',
-      marginHorizontal: 8,
-    },
-    viewToggleButtonActive: {
-      borderColor: theme.colors.primary,
-      backgroundColor: theme.colors.primary + '1A', // Semi-transparente
-    },
-    viewToggleText: {
-      fontSize: 14,
-      fontWeight: '500',
-    },
-    viewToggleTextActive: {
-      color: theme.colors.primary,
-      fontWeight: 'bold',
-    },
-  });
 
   // Cargar datos al montar el componente
   useEffect(() => {
@@ -146,108 +114,6 @@ const MisTurnosScreen: React.FC = () => {
     }
   };
 
-  // Generar datos del calendario para las próximas 4 semanas
-  const generateCalendarData = () => {
-    const reservasActivas = getReservasActivas();
-    const todasLasClases = getClasesFiltradas();
-    const markedDates: any = {};
-    
-    // Marcar las fechas de las reservas activas (verde)
-    reservasActivas.forEach(reserva => {
-      const fechaKey = reserva.fecha;
-      if (fechaKey) {
-        markedDates[fechaKey] = {
-          marked: true,
-          dotColor: '#90EE90', // Verde claro para clases reservadas
-          textColor: theme.colors.onSurface,
-          backgroundColor: 'rgba(144, 238, 144, 0.2)',
-        };
-      }
-    });
-
-    // Generar fechas para las próximas 4 semanas basadas en los días de las clases
-    const hoy = new Date();
-    const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    
-    todasLasClases.forEach(clase => {
-      if (clase.dias && clase.dias.length > 0) {
-        // Generar fechas para las próximas 4 semanas
-        for (let semana = 0; semana < 4; semana++) {
-          clase.dias.forEach(diaClase => {
-            const diaIndex = diasSemana.findIndex(d => d.toLowerCase() === diaClase.toLowerCase());
-            if (diaIndex !== -1) {
-              // Calcular la fecha para este día de la semana
-              const fecha = new Date(hoy);
-              fecha.setDate(hoy.getDate() + (semana * 7) + (diaIndex - hoy.getDay() + 7) % 7);
-              
-              // Solo incluir fechas futuras
-              if (fecha > hoy) {
-                const fechaKey = fecha.toISOString().split('T')[0];
-                
-                // Verificar si ya hay una reserva en esta fecha para esta clase
-                const tieneReserva = reservasActivas.some(reserva => 
-                  reserva.fecha === fechaKey && reserva.claseId === clase.id
-                );
-                
-                // Solo marcar si no hay una reserva en esa fecha
-                if (!markedDates[fechaKey]) {
-                  markedDates[fechaKey] = {
-                    marked: true,
-                    dotColor: tieneReserva ? '#90EE90' : '#87CEEB', // Verde si reservada, celeste si disponible
-                    textColor: theme.colors.onSurface,
-                    backgroundColor: tieneReserva ? 'rgba(144, 238, 144, 0.2)' : 'rgba(135, 206, 235, 0.2)',
-                  };
-                } else if (tieneReserva) {
-                  // Si ya existe la fecha, actualizar el color si esta clase está reservada
-                  markedDates[fechaKey].dotColor = '#90EE90';
-                  markedDates[fechaKey].backgroundColor = 'rgba(144, 238, 144, 0.2)';
-                }
-              }
-            }
-          });
-        }
-      }
-    });
-
-    return markedDates;
-  };
-
-  // Manejar selección de fecha en el calendario
-  const handleDateSelect = (day: DateData) => {
-    const fechaSeleccionada = day.dateString;
-    const reservasEnFecha = getReservasActivas().filter(reserva => reserva.fecha === fechaSeleccionada);
-    const clasesEnFecha = getClasesFiltradas().filter(clase => {
-      const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-      const fecha = new Date(fechaSeleccionada);
-      const diaSemana = diasSemana[fecha.getDay()];
-      return clase.dias.some(dia => dia.toLowerCase() === diaSemana.toLowerCase());
-    });
-    
-    let mensaje = `${fechaSeleccionada}\n\n`;
-    
-    if (reservasEnFecha.length > 0) {
-      mensaje += `Clases reservadas:\n`;
-      reservasEnFecha.forEach(reserva => {
-        mensaje += `• ${reserva.clase.nombre} - ${reserva.clase.horario}\n`;
-      });
-      mensaje += '\n';
-    }
-    
-    if (clasesEnFecha.length > 0) {
-      mensaje += `Clases disponibles:\n`;
-      clasesEnFecha.forEach(clase => {
-        const estaReservada = reservasEnFecha.some(r => r.claseId === clase.id);
-        const estado = estaReservada ? ' (Reservada)' : '';
-        mensaje += `• ${clase.nombre} - ${clase.horario}${estado}\n`;
-      });
-    }
-    
-    if (reservasEnFecha.length === 0 && clasesEnFecha.length === 0) {
-      mensaje += 'No hay clases programadas para este día.';
-    }
-    
-    showSnackbar(mensaje, 'success');
-  };
 
   const renderReserva = ({ item: reserva }: { item: ReservaCardData }) => {
     const colorTipo = getColorByTipo(reserva.clase.tipo);
@@ -430,45 +296,6 @@ const MisTurnosScreen: React.FC = () => {
               Tienes {reservasActivas.length} {reservasActivas.length === 1 ? 'actividad programada' : 'actividades programadas'}
             </Text>
           </View>
-          
-          {/* Toggle de vista: Botones redondeados como en Clases */}
-          <View style={viewToggleStyles.viewToggleContainer}>
-            <TouchableOpacity
-              style={[
-                viewToggleStyles.viewToggleButton,
-                viewMode === 'cards' && viewToggleStyles.viewToggleButtonActive
-              ]}
-              onPress={() => setViewMode('cards')}
-            >
-                             <View style={styles.viewToggleContent}>
-                 <Ionicons name="list" size={16} color={viewMode === 'cards' ? theme.colors.primary : theme.colors.onSurface} style={{ marginRight: 4 }} />
-                 <Text style={[
-                   viewToggleStyles.viewToggleText,
-                   viewMode === 'cards' && viewToggleStyles.viewToggleTextActive
-                 ]}>
-                   Lista
-                 </Text>
-               </View>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[
-                viewToggleStyles.viewToggleButton,
-                viewMode === 'calendar' && viewToggleStyles.viewToggleButtonActive
-              ]}
-              onPress={() => setViewMode('calendar')}
-            >
-              <View style={styles.viewToggleContent}>
-                <Ionicons name="calendar" size={16} color={viewMode === 'calendar' ? theme.colors.primary : theme.colors.onSurface} style={{ marginRight: 4 }} />
-                <Text style={[
-                  viewToggleStyles.viewToggleText,
-                  viewMode === 'calendar' && viewToggleStyles.viewToggleTextActive
-                ]}>
-                  Calendario
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
         </View>
 
         {state.isLoading ? (
@@ -479,89 +306,20 @@ const MisTurnosScreen: React.FC = () => {
             </Text>
           </View>
         ) : reservasActivas.length > 0 ? (
-          viewMode === 'cards' ? (
-            <FlatList
-              data={reservasActivas}
-              renderItem={renderReserva}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={false}
-              refreshControl={
-                <RefreshControl
-                  refreshing={state.isLoading}
-                  onRefresh={loadData}
-                  colors={[theme.colors.primary]}
-                />
-              }
-              contentContainerStyle={styles.listContainer}
-            />
-          ) : (
-            <View style={styles.calendarContainer}>
-              <Calendar
-                markedDates={generateCalendarData()}
-                markingType="dot"
-                onDayPress={handleDateSelect}
-                theme={{
-                  backgroundColor: theme.colors.surface,
-                  calendarBackground: theme.colors.surface,
-                  textSectionTitleColor: theme.colors.onSurface,
-                  selectedDayBackgroundColor: theme.colors.primary,
-                  selectedDayTextColor: '#ffffff',
-                  todayTextColor: theme.colors.primary,
-                  dayTextColor: theme.colors.onSurface,
-                  textDisabledColor: theme.colors.outline,
-                  dotColor: '#90EE90',
-                  selectedDotColor: '#ffffff',
-                  arrowColor: theme.colors.primary,
-                  monthTextColor: theme.colors.onSurface,
-                  indicatorColor: theme.colors.primary,
-                  textDayFontWeight: '300',
-                  textMonthFontWeight: 'bold',
-                  textDayHeaderFontWeight: '300',
-                  textDayFontSize: 16,
-                  textMonthFontSize: 16,
-                  textDayHeaderFontSize: 13,
-                }}
-                enableSwipeMonths={true}
-                showWeekNumbers={false}
-                firstDay={1}
+          <FlatList
+            data={reservasActivas}
+            renderItem={renderReserva}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={state.isLoading}
+                onRefresh={loadData}
+                colors={[theme.colors.primary]}
               />
-              
-              {/* Leyenda del calendario */}
-              <View style={styles.calendarLegend}>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#90EE90' }]} />
-                  <Text style={[styles.legendText, { color: theme.colors.onSurfaceVariant }]}>
-                    Clase reservada
-                  </Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#87CEEB' }]} />
-                  <Text style={[styles.legendText, { color: theme.colors.onSurfaceVariant }]}>
-                    Clase disponible
-                  </Text>
-                </View>
-              </View>
-              
-              {/* Información del calendario */}
-              <View style={styles.calendarInfo}>
-                <View style={styles.calendarInfoRow}>
-                  <Ionicons name="calendar" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
-                  <Text style={[styles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
-                    Visualiza todas las clases en el calendario
-                  </Text>
-                </View>
-                <Text style={[styles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
-                  Verde: clases reservadas • Celeste: clases disponibles para reservar
-                </Text>
-                <View style={styles.calendarInfoRow}>
-                  <Ionicons name="bulb" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
-                  <Text style={[styles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
-                    Toca una fecha para ver las clases del día
-                  </Text>
-                </View>
-              </View>
-            </View>
-          )
+            }
+            contentContainerStyle={styles.listContainer}
+          />
         ) : (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyContent}>
@@ -864,53 +622,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  calendarContainer: {
-    flex: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 20,
-    backgroundColor: 'transparent',
-  },
-  calendarLegend: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 5,
-  },
-  legendText: {
-    fontSize: 13,
-  },
-  calendarInfo: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  calendarInfoText: {
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  viewToggleContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  calendarInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
   emptyContent: {
     flexDirection: 'row',
     alignItems: 'center',

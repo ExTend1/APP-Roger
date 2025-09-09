@@ -1,15 +1,14 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Text, Card, List, Switch, Divider, useTheme as usePaperTheme } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useTheme } from '@/src/contexts/ThemeContext';
+import { SwipeableScreen } from '@/src/components/SwipeableScreen';
 import { useAuthStore } from '@/src/contexts/authStore';
 import { useNotificationConfig } from '@/src/contexts/NotificationConfigContext';
-import { SwipeableScreen } from '@/src/components/SwipeableScreen';
+import { useTheme } from '@/src/contexts/ThemeContext';
 import NotificationService from '@/src/services/notificationService';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React from 'react';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Card, Divider, List, Switch, Text, useTheme as usePaperTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AjustesScreen() {
   const theme = usePaperTheme();
@@ -159,13 +158,6 @@ export default function AjustesScreen() {
             />
             <Divider style={styles.divider} />
             <List.Item
-              title="Cambiar contraseña"
-              description="Actualizar tu contraseña"
-              left={(props) => <List.Icon {...props} icon="lock" />}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
-            />
-            <Divider style={styles.divider} />
-            <List.Item
               title="Cerrar sesión"
               description="Salir de tu cuenta"
               left={(props) => <List.Icon {...props} icon="logout" color={theme.colors.error} />}
@@ -187,13 +179,6 @@ export default function AjustesScreen() {
               left={(props) => <List.Icon {...props} icon="help-circle" />}
               right={(props) => <List.Icon {...props} icon="chevron-right" />}
               onPress={() => router.push('/centro-ayuda' as any)}
-            />
-            <Divider style={styles.divider} />
-            <List.Item
-              title="Contacto"
-              description="Ponte en contacto con soporte"
-              left={(props) => <List.Icon {...props} icon="message" />}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
             />
             <Divider style={styles.divider} />
             <List.Item

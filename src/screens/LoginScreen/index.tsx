@@ -2,27 +2,27 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-    Dimensions,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    View,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  View,
 } from 'react-native';
 import {
-    Button,
-    IconButton,
-    Surface,
-    Text,
-    TextInput,
+  Button,
+  IconButton,
+  Surface,
+  Text,
+  TextInput,
 } from 'react-native-paper';
 import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withDelay,
-    withSequence,
-    withSpring,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withSpring,
 } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
 import ScreenWrapper from '../../components/ScreenWrapper';
@@ -299,7 +299,15 @@ const LoginScreen: React.FC = () => {
                 ¿No tienes cuenta?
               </Text>
               <Text style={styles.infoText}>
-                Solicita tu cuenta en recepción para acceder a la app del gimnasio.
+                Para acceder a la app necesitas una cuenta del gimnasio. Debes solicitarla en recepción o contactar al número del gimnasio.
+              </Text>
+              <Text style={styles.contactInfo}>
+                📞 WhatsApp: +54 9 353 565-1758{'\n'}
+                📧 Email: extendvm@gmail.com{'\n'}
+                📍 Ubicación: Villa Nueva, Córdoba
+              </Text>
+              <Text style={[styles.contactInfo, { marginTop: 8, fontSize: 11 }]}>
+                ⚠️ Si olvidaste tu contraseña, contacta al gimnasio para restablecerla
               </Text>
             </View>
           </View>
@@ -433,6 +441,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FFFFFF',
     lineHeight: 20,
+    marginBottom: 8,
+  },
+  contactInfo: {
+    fontSize: 12,
+    color: '#FFD700',
+    lineHeight: 18,
+    fontWeight: '500',
   },
 });
 
