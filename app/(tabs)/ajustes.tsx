@@ -149,6 +149,7 @@ export default function AjustesScreen() {
             <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
               Cuenta
             </Text>
+            {/* Comentado temporalmente por problemas de autenticación
             <List.Item
               title="Perfil"
               description="Editar información personal"
@@ -156,6 +157,7 @@ export default function AjustesScreen() {
               right={(props) => <List.Icon {...props} icon="chevron-right" />}
               onPress={() => router.push('/profile-edit' as any)}
             />
+            */}
             <Divider style={styles.divider} />
             <List.Item
               title="Cerrar sesión"

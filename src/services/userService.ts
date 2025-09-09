@@ -76,6 +76,8 @@ export interface UserResponse {
 }
 
 export const userService = {
+  // Comentado temporalmente por problemas de autenticación en producción
+  /*
   // Obtener perfil del usuario autenticado
   async getMyProfile(): Promise<UserResponse> {
     try {
@@ -120,4 +122,5 @@ export const userService = {
       };
     }
   },
+  */
 }; 

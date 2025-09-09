@@ -164,12 +164,15 @@ const CentroAyudaScreen: React.FC = () => {
     {
       title: 'Perfil y Cuenta',
       items: [
+        // Comentado temporalmente por problemas de autenticación
+        /*
         {
           id: 'perfil',
           title: 'Editar Perfil',
           description: 'Actualiza tu información personal',
           content: '1. Ve a Ajustes > Cuenta > Perfil\n2. Modifica tu información personal\n3. Toca "Guardar" para confirmar\n4. Los cambios se aplicarán inmediatamente'
         },
+        */
         {
           id: 'olvido-password',
           title: 'Olvidé mi Contraseña',
