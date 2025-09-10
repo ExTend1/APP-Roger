@@ -24,6 +24,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.roger.gym",
+      buildNumber: "2",
       infoPlist: {
         NSUserNotificationUsageDescription: "Esta app necesita acceso a las notificaciones...",
         NSAppTransportSecurity: {
@@ -34,16 +35,16 @@ export default {
             }
           }
         },
-        NSUserTrackingUsageDescription: "Esta app no rastrea tu actividad personal...",
         NSDocumentsFolderUsageDescription: "Esta app guarda tu configuración...",
         UIBackgroundModes: ["remote-notification"],
-        NSFaceIDUsageDescription: "Esta app no usa Face ID..."
+        NSFaceIDUsageDescription: "Esta app no usa Face ID...",
+        ITSAppUsesNonExemptEncryption: false
       }
     },
 
     android: {
       package: "com.roger.gym",
-      versionCode: 1, // ¡Subilo en cada release!
+      versionCode: 2, // ¡Subilo en cada release!
       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         foregroundImage: "./assets/images/logo.png",
