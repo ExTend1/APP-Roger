@@ -65,6 +65,7 @@ export interface User {
   genero?: string;
   rol: 'ADMIN' | 'USER';
   activo: boolean;
+  token?: number;
   createdAt: string;
   updatedAt: string;
 }

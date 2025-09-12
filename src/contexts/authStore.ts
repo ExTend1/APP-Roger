@@ -12,6 +12,7 @@ export interface User {
   telefono?: string;
   genero?: string;
   rol: string;
+  token?: number;
 }
 
 export interface FieldErrors {

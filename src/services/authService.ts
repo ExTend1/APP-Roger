@@ -24,6 +24,7 @@ export const userSchema = z.object({
   apellido: z.string(),
   email: z.string().email(),
   rol: z.string(),
+  token: z.number().optional(),
 });
 
 export const loginResponseSchema = z.object({
