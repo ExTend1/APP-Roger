@@ -1,7 +1,8 @@
-// Configuración de la API
+import { ENV_CONFIG } from './environment';
+
 export const API_CONFIG = {
   // URL base de la API - asegurar que no termine en /
-  BASE_URL: 'https://api-gym.extendsystem.com/api/v1',
+  BASE_URL: ENV_CONFIG.API_BASE_URL,
   
   // Endpoints específicos
   ENDPOINTS: {

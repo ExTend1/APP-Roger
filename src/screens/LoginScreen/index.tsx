@@ -26,6 +26,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
 import ScreenWrapper from '../../components/ScreenWrapper';
+import DebugInfo from '../../components/DebugInfo';
 import { useAuthStore } from '../../contexts/authStore';
 
 const { width, height } = Dimensions.get('window');
@@ -53,6 +54,7 @@ const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
   
   // Referencias para los inputs
   const emailInputRef = React.useRef<any>(null);
@@ -286,6 +288,24 @@ const LoginScreen: React.FC = () => {
             </Surface>
           </Animated.View>
 
+          {/* Botón de Debug (solo en desarrollo o cuando hay errores) */}
+          {(__DEV__ || error) && (
+            <View style={styles.debugContainer}>
+              <Button
+                mode="outlined"
+                onPress={() => setShowDebug(!showDebug)}
+                style={styles.debugButton}
+                labelStyle={styles.debugButtonLabel}
+                textColor="#FFD700"
+              >
+                {showDebug ? 'Ocultar Debug' : 'Mostrar Debug'}
+              </Button>
+            </View>
+          )}
+
+          {/* Componente de Debug */}
+          <DebugInfo visible={showDebug} />
+
           {/* Información */}
           <View style={styles.infoBox}>
             <IconButton
@@ -414,6 +434,17 @@ const styles = StyleSheet.create({
   loginButtonLabel: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  debugContainer: {
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  debugButton: {
+    borderColor: '#FFD700',
+    borderRadius: 8,
+  },
+  debugButtonLabel: {
+    fontSize: 12,
   },
   infoBox: {
     backgroundColor: '#2a2a2a',

@@ -7,6 +7,15 @@ export default {
     icon: "./assets/images/logo.png",
     scheme: "rogerAPP",
     userInterfaceStyle: "automatic",
+    
+    // Variables de entorno para la aplicación
+    extra: {
+      EXPO_PUBLIC_API_BASE_URL: "https://api.gimnasioroger.com/api/v1",
+      JWT_SECRET: "ExtendLoMejor2025!",
+      eas: {
+        projectId: "5d24f8fe-6c24-4dbf-8d4f-3f8869f08595"
+      }
+    },
 
     splash: {
       image: "./assets/images/splashscreen_logo.png",
@@ -15,16 +24,11 @@ export default {
     },
 
     owner: "martiinvan",
-    extra: {
-      eas: {
-        projectId: "5d24f8fe-6c24-4dbf-8d4f-3f8869f08595"
-      }
-    },
 
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.roger.gym",
-      buildNumber: "2",
+      buildNumber: "3",
       infoPlist: {
         NSUserNotificationUsageDescription: "Esta app necesita acceso a las notificaciones...",
         NSAppTransportSecurity: {
@@ -44,7 +48,7 @@ export default {
 
     android: {
       package: "com.roger.gym",
-      versionCode: 2, // ¡Subilo en cada release!
+      versionCode: 3, // ¡Subir en cada release!
       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         foregroundImage: "./assets/images/logo.png",

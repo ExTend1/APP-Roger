@@ -1,16 +1,17 @@
 import axios, { AxiosInstance } from 'axios';
 import { z } from 'zod';
+import { ENV_CONFIG } from '../config/environment';
 
 // Configuración de la API
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api-gym.extendsystem.com/api/v1';
+const API_BASE_URL = ENV_CONFIG.API_BASE_URL;
 
 // Asegurar que la URL base termine correctamente
 const normalizedBaseURL = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
 
 // Log para debugging
 console.log('🌐 API_BASE_URL configurada:', API_BASE_URL);
-console.log('🌐 EXPO_PUBLIC_API_BASE_URL:', process.env.EXPO_PUBLIC_API_BASE_URL);
 console.log('🌐 URL normalizada:', normalizedBaseURL);
+console.log('🌐 Entorno:', ENV_CONFIG.IS_DEV ? 'DESARROLLO' : 'PRODUCCIÓN');
 
 // Schemas de validación basados en el backend
 export const loginSchema = z.object({
