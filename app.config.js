@@ -28,7 +28,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.roger.gym",
-      buildNumber: "3",
+      buildNumber: "2",
       infoPlist: {
         NSUserNotificationUsageDescription: "Esta app necesita acceso a las notificaciones...",
         NSAppTransportSecurity: {
@@ -48,7 +48,7 @@ export default {
 
     android: {
       package: "com.roger.gym",
-      versionCode: 3, // ¡Subir en cada release!
+      versionCode: 2, // ¡Subir en cada release!
       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         foregroundImage: "./assets/images/logo.png",
