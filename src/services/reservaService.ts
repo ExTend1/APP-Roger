@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { z } from 'zod';
 import { useAuthStore } from '../contexts/authStore';
+import { ENV_CONFIG } from '../config/environment';
 import {
   Clase,
   Reserva,
@@ -18,7 +19,11 @@ import {
 } from '../types/reservas';
 
 // Configuración de la API
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.111:3000/api/v1';
+const API_BASE_URL = ENV_CONFIG.API_BASE_URL;
+
+// Log para debugging
+console.log('🔧 ReservaService API_BASE_URL:', API_BASE_URL);
+console.log('🔧 ReservaService ENV_CONFIG:', ENV_CONFIG);
 
 // Configuración de Axios
 const createApiClient = (): AxiosInstance => {
