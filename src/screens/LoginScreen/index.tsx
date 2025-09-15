@@ -26,7 +26,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
 import ScreenWrapper from '../../components/ScreenWrapper';
-import DebugInfo from '../../components/DebugInfo';
 import { useAuthStore } from '../../contexts/authStore';
 
 const { width, height } = Dimensions.get('window');
@@ -54,7 +53,6 @@ const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showDebug, setShowDebug] = useState(false);
   
   // Referencias para los inputs
   const emailInputRef = React.useRef<any>(null);
@@ -288,23 +286,6 @@ const LoginScreen: React.FC = () => {
             </Surface>
           </Animated.View>
 
-          {/* Botón de Debug (solo en desarrollo o cuando hay errores) */}
-          {(__DEV__ || error) && (
-            <View style={styles.debugContainer}>
-              <Button
-                mode="outlined"
-                onPress={() => setShowDebug(!showDebug)}
-                style={styles.debugButton}
-                labelStyle={styles.debugButtonLabel}
-                textColor="#FFD700"
-              >
-                {showDebug ? 'Ocultar Debug' : 'Mostrar Debug'}
-              </Button>
-            </View>
-          )}
-
-          {/* Componente de Debug */}
-          <DebugInfo visible={showDebug} />
 
           {/* Información */}
           <View style={styles.infoBox}>
@@ -320,11 +301,6 @@ const LoginScreen: React.FC = () => {
               </Text>
               <Text style={styles.infoText}>
                 Para acceder a la app necesitas una cuenta del gimnasio. Debes solicitarla en recepción o contactar al número del gimnasio.
-              </Text>
-              <Text style={styles.contactInfo}>
-                📞 WhatsApp: +54 9 353 565-1758{'\n'}
-                📧 Email: extendvm@gmail.com{'\n'}
-                📍 Ubicación: Villa Nueva, Córdoba
               </Text>
               <Text style={[styles.contactInfo, { marginTop: 8, fontSize: 11 }]}>
                 ⚠️ Si olvidaste tu contraseña, contacta al gimnasio para restablecerla
@@ -434,17 +410,6 @@ const styles = StyleSheet.create({
   loginButtonLabel: {
     fontSize: 16,
     fontWeight: '600',
-  },
-  debugContainer: {
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  debugButton: {
-    borderColor: '#FFD700',
-    borderRadius: 8,
-  },
-  debugButtonLabel: {
-    fontSize: 12,
   },
   infoBox: {
     backgroundColor: '#2a2a2a',
