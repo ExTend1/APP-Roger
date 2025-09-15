@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "APP-Roger",
     slug: "APP-Roger",
-    version: "1.0.0",
+    version: "1.0.2",
     orientation: "portrait",
     icon: "./assets/images/logo.png",
     scheme: "rogerAPP",
@@ -28,7 +28,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.roger.gym",
-      buildNumber: "2",
+      buildNumber: "4",
       infoPlist: {
         NSUserNotificationUsageDescription: "Esta app necesita acceso a las notificaciones...",
         NSAppTransportSecurity: {
@@ -48,7 +48,7 @@ export default {
 
     android: {
       package: "com.roger.gym",
-      versionCode: 2, // ¡Subir en cada release!
+      versionCode: 3, // ¡Subir en cada release!
       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         foregroundImage: "./assets/images/logo.png",

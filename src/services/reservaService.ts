@@ -21,10 +21,6 @@ import {
 // Configuración de la API
 const API_BASE_URL = ENV_CONFIG.API_BASE_URL;
 
-// Log para debugging
-console.log('🔧 ReservaService API_BASE_URL:', API_BASE_URL);
-console.log('🔧 ReservaService ENV_CONFIG:', ENV_CONFIG);
-
 // Configuración de Axios
 const createApiClient = (): AxiosInstance => {
   const client = axios.create({

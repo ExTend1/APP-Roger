@@ -405,7 +405,7 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
     }
   }, [isAuthenticated, user, loadData]);
 
-  // Programar notificaciones para reservas existentes cuando se cargan
+  // Programar notificaciones para reservas existentes solo al cargar inicialmente
   useEffect(() => {
     if (state.reservas.length > 0 && notificationsEnabled) {
       const scheduleNotificationsForExistingReservas = async () => {
@@ -419,14 +419,30 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
             return;
           }
           
-          // Programar notificaciones para todas las reservas activas
+          // Limpiar notificaciones duplicadas y expiradas primero
+          await notificationService.cleanupExpiredNotifications();
+          
+          // Obtener notificaciones ya programadas para evitar duplicados
+          const scheduledNotifications = await notificationService.getScheduledNotifications();
+          const scheduledReservaIds = new Set(
+            scheduledNotifications
+              .filter(n => n.content.data?.reminderType === 'class_reminder')
+              .map(n => n.content.data?.reservaId)
+              .filter(Boolean)
+          );
+          
+          // Programar notificaciones solo para reservas que no tienen notificación programada
+          let newNotificationsCount = 0;
           for (const reserva of state.reservas) {
-            if (reserva.estado === 'ACTIVA') {
-              await notificationService.scheduleClassReminder(reserva);
+            if (reserva.estado === 'ACTIVA' && !scheduledReservaIds.has(reserva.id)) {
+              const notificationId = await notificationService.scheduleClassReminder(reserva);
+              if (notificationId) {
+                newNotificationsCount++;
+              }
             }
           }
           
-          console.log('Notificaciones programadas para reservas existentes');
+          console.log(`Notificaciones programadas: ${newNotificationsCount} nuevas, ${scheduledReservaIds.size} existentes`);
         } catch (error) {
           console.warn('Error al programar notificaciones para reservas existentes:', error);
         }
@@ -434,7 +450,7 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
       
       scheduleNotificationsForExistingReservas();
     }
-  }, [state.reservas, notificationsEnabled]);
+  }, [notificationsEnabled]); // Removido state.reservas de las dependencias para evitar re-programación constante
 
   const reservarClase = useCallback(async (claseId: string): Promise<boolean> => {
     if (!isAuthenticated || !user) {

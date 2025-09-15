@@ -91,6 +91,13 @@ export class NotificationService {
   // Programar recordatorio de clase
   async scheduleClassReminder(reserva: ReservaConClase): Promise<string | null> {
     try {
+      // Verificar si ya existe una notificación para esta reserva
+      const existingNotificationId = this.notificationIds.get(reserva.claseId);
+      if (existingNotificationId) {
+        console.log(`Ya existe una notificación programada para la clase ${reserva.claseId}`);
+        return existingNotificationId;
+      }
+
       // Calcular la fecha y hora de la clase
       const claseDate = this.calculateNextClassDate(reserva);
       if (!claseDate) {
@@ -111,8 +118,14 @@ export class NotificationService {
       // Crear ID único para la notificación
       const notificationId = `clase_${reserva.claseId}_${reserva.id}`;
       
-      // Cancelar notificación existente si existe
-      await this.cancelClassReminder(reserva.claseId);
+      // Verificar si ya existe una notificación programada con este ID
+      const scheduledNotifications = await this.getScheduledNotifications();
+      const existingNotification = scheduledNotifications.find(n => n.identifier === notificationId);
+      if (existingNotification) {
+        console.log(`Notificación ya existe para ${reserva.clase.nombre}`);
+        this.notificationIds.set(reserva.claseId, notificationId);
+        return notificationId;
+      }
 
       // Programar nueva notificación con trigger más robusto
       const scheduledNotificationId = await Notifications.scheduleNotificationAsync({
@@ -163,6 +176,30 @@ export class NotificationService {
       return false;
     } catch (error) {
       console.error('Error al cancelar notificación de clase:', error);
+      return false;
+    }
+  }
+
+  // Cancelar notificación por ID de reserva
+  async cancelNotificationByReservaId(reservaId: string): Promise<boolean> {
+    try {
+      const scheduledNotifications = await this.getScheduledNotifications();
+      const notificationToCancel = scheduledNotifications.find(
+        n => n.content.data?.reservaId === reservaId && n.content.data?.reminderType === 'class_reminder'
+      );
+      
+      if (notificationToCancel) {
+        await Notifications.cancelScheduledNotificationAsync(notificationToCancel.identifier);
+        const claseId = notificationToCancel.content.data?.claseId as string;
+        if (claseId) {
+          this.notificationIds.delete(claseId);
+        }
+        console.log(`Notificación cancelada para reserva ${reservaId}`);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error al cancelar notificación por reserva ID:', error);
       return false;
     }
   }
@@ -259,21 +296,43 @@ export class NotificationService {
     }
   }
 
-  // Limpiar notificaciones expiradas
+  // Limpiar notificaciones expiradas y duplicadas
   async cleanupExpiredNotifications(): Promise<void> {
     try {
       const scheduledNotifications = await this.getScheduledNotifications();
       const now = new Date();
+      const classReminders = new Map<string, string>(); // claseId -> notificationId
       
       for (const notification of scheduledNotifications) {
         if (notification.trigger && 'date' in notification.trigger && notification.trigger.date) {
           const triggerDate = new Date(notification.trigger.date);
+          
+          // Cancelar notificaciones expiradas
           if (triggerDate <= now) {
             await Notifications.cancelScheduledNotificationAsync(notification.identifier);
             console.log(`Notificación expirada cancelada: ${notification.identifier}`);
+            continue;
+          }
+          
+          // Detectar y limpiar notificaciones duplicadas para la misma clase
+          if (notification.content.data?.reminderType === 'class_reminder') {
+            const claseId = notification.content.data?.claseId as string;
+            if (claseId && typeof claseId === 'string') {
+              if (classReminders.has(claseId)) {
+                // Ya existe una notificación para esta clase, cancelar la duplicada
+                await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+                console.log(`Notificación duplicada cancelada para clase ${claseId}: ${notification.identifier}`);
+              } else {
+                // Primera notificación para esta clase, guardarla
+                classReminders.set(claseId, notification.identifier);
+                this.notificationIds.set(claseId, notification.identifier);
+              }
+            }
           }
         }
       }
+      
+      console.log(`Limpieza completada. Notificaciones activas: ${classReminders.size}`);
     } catch (error) {
       console.error('Error al limpiar notificaciones expiradas:', error);
     }
