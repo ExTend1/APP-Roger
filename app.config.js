@@ -28,7 +28,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.roger.gym",
-      buildNumber: "4",
+      buildNumber: "5",
       infoPlist: {
         NSUserNotificationUsageDescription: "Esta app necesita acceso a las notificaciones...",
         NSAppTransportSecurity: {
