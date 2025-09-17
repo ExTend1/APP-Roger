@@ -66,7 +66,7 @@ export default {
   web: {
     bundler: "metro",
     output: "static",
-    favicon: "./assets/images/logo.png"
+    favicon: "./assets/images/RogerAPP.png"
   },
 
   plugins: [
@@ -75,7 +75,7 @@ export default {
     [
       "expo-notifications",
       {
-        icon: "./assets/images/logo.png",
+        icon: "./assets/images/RogerAPP.png",
         color: "#FFD700"
       }
     ],
