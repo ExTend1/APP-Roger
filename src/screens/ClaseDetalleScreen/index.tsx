@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -12,7 +13,6 @@ import {
   useTheme
 } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import CustomHeader from '../../components/CustomHeader';
 import { SwipeableScreen } from '../../components/SwipeableScreen';
 import { useReservas } from '../../contexts/ReservasContext';
@@ -187,7 +187,7 @@ const ClaseDetalleScreen: React.FC = () => {
     const tipoLower = tipo.toLowerCase();
     
     if (tipoLower === 'crossfit') {
-      return require('../../../assets/images/crossfit.png');
+      return require('../../../assets/images/crossfit.jpg');
     } else if (tipoLower === 'funcional') {
       return require('../../../assets/images/funcional.png');
     }

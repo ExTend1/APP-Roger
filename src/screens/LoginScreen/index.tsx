@@ -2,28 +2,21 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  View,
+    Dimensions,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    View,
 } from 'react-native';
 import {
-  Button,
-  IconButton,
-  Surface,
-  Text,
-  TextInput,
+    Button,
+    IconButton,
+    Surface,
+    Text,
+    TextInput,
 } from 'react-native-paper';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withSequence,
-  withSpring,
-} from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
 import ScreenWrapper from '../../components/ScreenWrapper';
 import { useAuthStore } from '../../contexts/authStore';
@@ -57,43 +50,6 @@ const LoginScreen: React.FC = () => {
   // Referencias para los inputs
   const emailInputRef = React.useRef<any>(null);
   const passwordInputRef = React.useRef<any>(null);
-  
-  // Valores animados
-  const logoScale = useSharedValue(0);
-  const logoOpacity = useSharedValue(0);
-  const formTranslateY = useSharedValue(50);
-  const formOpacity = useSharedValue(0);
-  const errorOpacity = useSharedValue(0);
-  const errorScale = useSharedValue(0.8);
-
-  // Iniciar animaciones
-  useEffect(() => {
-    const startAnimations = () => {
-      // Animación del logo
-      logoScale.value = withSequence(
-        withSpring(1.2, { damping: 8, stiffness: 100 }),
-        withSpring(1, { damping: 8, stiffness: 100 })
-      );
-      logoOpacity.value = withSpring(1, { damping: 8 });
-
-      // Animación del formulario con delay
-      formTranslateY.value = withDelay(300, withSpring(0, { damping: 8 }));
-      formOpacity.value = withDelay(300, withSpring(1, { damping: 8 }));
-    };
-
-    startAnimations();
-  }, []);
-
-  // Animar error cuando aparece
-  useEffect(() => {
-    if (error || Object.keys(fieldErrors).length > 0) {
-      errorOpacity.value = withSpring(1, { damping: 8 });
-      errorScale.value = withSpring(1, { damping: 8 });
-    } else {
-      errorOpacity.value = withSpring(0, { damping: 8 });
-      errorScale.value = withSpring(0.8, { damping: 8 });
-    }
-  }, [error, fieldErrors]);
 
   // Limpiar errores cuando los campos están completamente vacíos
   useEffect(() => {
@@ -102,22 +58,6 @@ const LoginScreen: React.FC = () => {
       clearFieldErrors();
     }
   }, [email, password]);
-
-  // Estilos animados
-  const logoAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: logoScale.value }],
-    opacity: logoOpacity.value,
-  }));
-
-  const formAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: formTranslateY.value }],
-    opacity: formOpacity.value,
-  }));
-
-  const errorAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: errorOpacity.value,
-    transform: [{ scale: errorScale.value }],
-  }));
 
   // Manejadores de eventos
   const handleEmailChange = (text: string) => {
@@ -179,8 +119,8 @@ const LoginScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Logo animado */}
-          <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
+          {/* Logo */}
+          <View style={styles.logoContainer}>
             <View style={styles.logoCircle}>
               <SvgXml xml={logoSvg} width={50} height={50} />
             </View>
@@ -190,17 +130,19 @@ const LoginScreen: React.FC = () => {
             <Text style={styles.subtitle}>
               Ingresa a tu cuenta del gimnasio
             </Text>
-          </Animated.View>
+          </View>
 
           {/* Mensaje de error general */}
-          {hasGeneralError && (
-            <Animated.View style={[styles.errorContainer, errorAnimatedStyle]}>
-              <Text style={styles.errorText}>{error}</Text>
-            </Animated.View>
+          {(hasGeneralError || hasEmailError || hasPasswordError) && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>
+                {error || fieldErrors.email || fieldErrors.password}
+              </Text>
+            </View>
           )}
 
-          {/* Formulario animado */}
-          <Animated.View style={[styles.formContainer, formAnimatedStyle]}>
+          {/* Formulario */}
+          <View style={styles.formContainer}>
             <Surface style={styles.formSurface}>
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Email</Text>
@@ -284,7 +226,7 @@ const LoginScreen: React.FC = () => {
                 {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
               </Button>
             </Surface>
-          </Animated.View>
+          </View>
 
 
           {/* Información */}
