@@ -121,9 +121,7 @@ const LoginScreen: React.FC = () => {
         >
           {/* Logo */}
           <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <SvgXml xml={logoSvg} width={50} height={50} />
-            </View>
+            <SvgXml xml={logoSvg} width={50} height={50} />
             <Text style={styles.gymName}>
               Bienvenido
             </Text>
@@ -273,22 +271,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FFD700',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#FFD700',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
+  // logoCircle eliminado para quitar efectos visuales
   gymName: {
     fontSize: 32,
     fontWeight: 'bold',

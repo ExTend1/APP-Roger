@@ -3,12 +3,12 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 import {
-    ActivityIndicator,
-    Button,
-    Card,
-    Snackbar,
-    Text,
-    useTheme
+  ActivityIndicator,
+  Button,
+  Card,
+  Snackbar,
+  Text,
+  useTheme
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomHeader from '../../components/CustomHeader';
@@ -324,7 +324,7 @@ const MisTurnosScreen: React.FC = () => {
           <View style={styles.emptyContainer}>
             <View style={styles.emptyContent}>
               <Ionicons name="calendar" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
-              <Text style={[styles.emptyText, { color: 'black' }]}>
+              <Text style={[styles.emptyText, { color: theme.colors.onSurface }]}>
                 No tienes reservas activas
               </Text>
             </View>

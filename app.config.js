@@ -2,7 +2,7 @@
 export default {
   name: "RogerAPP",
   slug: "RogerAPP",
-  version: "1.0.3",
+  version: "1.0.4",
   orientation: "portrait",
   icon: "./assets/images/RogerAPP.png",
   scheme: "rogerAPP",
@@ -12,8 +12,8 @@ export default {
     EXPO_PUBLIC_API_BASE_URL: "https://api.gimnasioroger.com/api/v1",
     JWT_SECRET: "ExtendLoMejor2025!", 
     eas: {
-      projectId: "5d24f8fe-6c24-4dbf-8d4f-3f8869f08595"
-    }
+        projectId: "d0615ddf-8004-4158-81bd-c75ba81dacda"
+      },
   },
 
   splash: {
@@ -22,12 +22,12 @@ export default {
     backgroundColor: "#1a1a1a"
   },
 
-  owner: "martiinvan",
+  owner: "jjuanbaez",
 
   ios: {
     supportsTablet: true,
     bundleIdentifier: "com.roger.gym",
-    buildNumber: "4",
+  buildNumber: "5",
     infoPlist: {
       NSUserNotificationUsageDescription:
         "Esta app necesita acceso a las notificaciones...",
