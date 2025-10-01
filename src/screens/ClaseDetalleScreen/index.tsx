@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, Image, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import {
   ActivityIndicator,
   Button,
-  FAB,
   Searchbar,
   Snackbar,
   Text,
@@ -29,9 +28,9 @@ const ClaseDetalleScreen: React.FC = () => {
     cancelarReserva, 
     setSearchTerm, 
     setSelectedTipo,
+    setSelectedDate,
     getClasesFiltradas,
     isClaseReservada,
-    clearError,
     fetchUserTokens
   } = useReservas();
 
@@ -41,12 +40,7 @@ const ClaseDetalleScreen: React.FC = () => {
   const [snackbarType, setSnackbarType] = useState<'success' | 'error'>('success');
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
-  // Cargar datos al montar el componente
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     console.log('[ClaseDetalleScreen] Cargando datos...');
     await Promise.all([
       fetchClases(),
@@ -54,7 +48,12 @@ const ClaseDetalleScreen: React.FC = () => {
       fetchUserTokens()
     ]);
     console.log('[ClaseDetalleScreen] Datos cargados');
-  };
+  }, [fetchClases, fetchReservas, fetchUserTokens]);
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Generar datos del calendario con colores distintivos
   const generateCalendarData = () => {
@@ -66,19 +65,19 @@ const ClaseDetalleScreen: React.FC = () => {
         for (let week = 0; week < 4; week++) {
           const dateKey = getDateKeyFromDay(dia, week);
           if (dateKey) {
-            const isReservada = isClaseReservada(clase.id);
-            const color = isReservada ? '#90EE90' : '#87CEEB'; // Verde claro si está reservada, celeste si no
-            
-            if (calendarData[dateKey]) {
-              calendarData[dateKey].dots.push({
-                key: clase.id,
-                color: color,
-                selectedDotColor: color
-              });
-            } else {
+            // Solo agregar un punto por fecha, no por clase
+            if (!calendarData[dateKey]) {
+              // Verificar si hay alguna clase reservada para este día
+              const tieneClaseReservada = state.clases.some(c => 
+                c.dias.some(d => d.toLowerCase() === dia.toLowerCase()) && 
+                isClaseReservada(c.id)
+              );
+              
+              const color = tieneClaseReservada ? '#90EE90' : '#87CEEB'; // Verde si hay reservas, celeste si solo disponibles
+              
               calendarData[dateKey] = {
                 dots: [{
-                  key: clase.id,
+                  key: dateKey, // Usar la fecha como key en lugar del ID de clase
                   color: color,
                   selectedDotColor: color
                 }]
@@ -95,7 +94,22 @@ const ClaseDetalleScreen: React.FC = () => {
   // Convertir día de la semana a fecha específica
   const getDateKeyFromDay = (dia: string, weekOffset: number = 0): string | null => {
     const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    const diaIndex = diasSemana.indexOf(dia.toLowerCase());
+    
+    // Mapeo de días en mayúsculas a minúsculas para compatibilidad
+    const mapeoDias: Record<string, string> = {
+      'LUNES': 'lunes',
+      'MARTES': 'martes', 
+      'MIÉRCOLES': 'miércoles',
+      'MIERCOLES': 'miércoles',
+      'JUEVES': 'jueves',
+      'VIERNES': 'viernes',
+      'SÁBADO': 'sábado',
+      'SABADO': 'sábado',
+      'DOMINGO': 'domingo'
+    };
+    
+    const diaNormalizado = mapeoDias[dia] || dia.toLowerCase();
+    const diaIndex = diasSemana.indexOf(diaNormalizado);
     
     if (diaIndex === -1) return null;
     
@@ -115,27 +129,14 @@ const ClaseDetalleScreen: React.FC = () => {
   // Manejador para cuando se selecciona una fecha en el calendario
   const handleDateSelect = (day: DateData) => {
     const fechaSeleccionada = day.dateString;
-    const clasesEnFecha = state.clases.filter(clase => {
-      const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-      const fecha = new Date(fechaSeleccionada);
-      const diaSemana = diasSemana[fecha.getDay()];
-      return clase.dias.some(dia => dia.toLowerCase() === diaSemana.toLowerCase());
-    });
     
-    let mensaje = `${fechaSeleccionada}\n\n`;
-    
-    if (clasesEnFecha.length > 0) {
-      mensaje += `Clases disponibles:\n`;
-      clasesEnFecha.forEach(clase => {
-        const estaReservada = isClaseReservada(clase.id);
-        const estado = estaReservada ? ' (Reservada)' : '';
-        mensaje += `• ${clase.nombre} - ${clase.horario}${estado}\n`;
-      });
+    // Si ya está seleccionada la misma fecha, la deseleccionamos
+    if (state.selectedDate === fechaSeleccionada) {
+      setSelectedDate(null);
     } else {
-      mensaje += 'No hay clases programadas para este día.';
+      // Establecer la fecha seleccionada para filtrar las clases
+      setSelectedDate(fechaSeleccionada);
     }
-    
-    showSnackbar(mensaje, 'success');
   };
 
 
@@ -161,7 +162,7 @@ const ClaseDetalleScreen: React.FC = () => {
       if (!success && state.error) {
         showSnackbar(state.error, 'error');
       }
-    } catch (error) {
+    } catch {
       showSnackbar('Error inesperado', 'error');
     }
   };
@@ -439,41 +440,46 @@ const ClaseDetalleScreen: React.FC = () => {
     },
          calendarLegend: {
        flexDirection: 'row',
-       justifyContent: 'space-around',
-       marginTop: 20,
-       paddingHorizontal: 10,
-       paddingVertical: 15,
+       justifyContent: 'center',
+       alignItems: 'center',
+       marginTop: 16,
+       paddingHorizontal: 20,
+       paddingVertical: 12,
        backgroundColor: theme.colors.surfaceVariant,
-       borderRadius: 12,
+       borderRadius: 16,
        marginHorizontal: 20,
+       gap: 24,
      },
     legendItem: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'center',
     },
     legendDot: {
-      width: 12,
-      height: 12,
-      borderRadius: 6,
+      width: 14,
+      height: 14,
+      borderRadius: 7,
       marginRight: 8,
     },
     legendText: {
-      fontSize: 13,
+      fontSize: 14,
       fontWeight: '500',
+      textAlign: 'center',
     },
          calendarInfo: {
-       marginTop: 20,
-       paddingHorizontal: 10,
-       paddingVertical: 15,
+       marginTop: 16,
+       paddingHorizontal: 20,
+       paddingVertical: 16,
        backgroundColor: theme.colors.surfaceVariant,
-       borderRadius: 12,
+       borderRadius: 16,
        alignItems: 'center',
        marginHorizontal: 20,
      },
     calendarInfoText: {
       fontSize: 14,
       textAlign: 'center',
-      opacity: 0.7,
+      opacity: 0.8,
+      lineHeight: 20,
     },
   });
 
@@ -535,13 +541,33 @@ const ClaseDetalleScreen: React.FC = () => {
 
 
 
-        {/* Filtros por tipo */}
+        {/* Filtros por tipo y fecha */}
         <View style={styles.filtrosContainer}>
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filtrosContent}
           >
+            {/* Botón para limpiar filtro de fecha */}
+            {state.selectedDate && (
+              <View
+                style={[
+                  styles.filtroCard,
+                  { backgroundColor: theme.colors.primary + '1A' }
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.filtroText,
+                    { color: theme.colors.primary, fontWeight: 'bold' }
+                  ]}
+                  onPress={() => setSelectedDate(null)}
+                >
+                  Limpiar fecha
+                </Text>
+              </View>
+            )}
+            
             {tiposDisponibles.map((tipo) => (
               <View
                 key={tipo.value}
@@ -620,31 +646,39 @@ const ClaseDetalleScreen: React.FC = () => {
               <View style={calendarStyles.legendItem}>
                 <View style={[calendarStyles.legendDot, { backgroundColor: '#90EE90' }]} />
                 <Text style={[calendarStyles.legendText, { color: theme.colors.onSurfaceVariant }]}>
-                  Clases reservadas
+                  Reservadas
                 </Text>
               </View>
               <View style={calendarStyles.legendItem}>
                 <View style={[calendarStyles.legendDot, { backgroundColor: '#87CEEB' }]} />
                 <Text style={[calendarStyles.legendText, { color: theme.colors.onSurfaceVariant }]}>
-                  Clases disponibles
+                Disponibles
                 </Text>
               </View>
             </View>
             
             {/* Información adicional del calendario */}
             <View style={calendarStyles.calendarInfo}>
-              <View style={styles.calendarInfoRow}>
-                <Ionicons name="bulb" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
-                <Text style={[calendarStyles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
-                  Toca una fecha para ver las clases del día
-                </Text>
-              </View>
-                              <View style={styles.calendarInfoRow}>
-                  <Ionicons name="calendar" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
-                  <Text style={[calendarStyles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
-                    El calendario muestra las próximas 4 semanas
+              {state.selectedDate ? (
+                <View style={styles.calendarInfoRow}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.colors.primary} style={{ marginRight: 4 }} />
+                  <Text style={[calendarStyles.calendarInfoText, { color: theme.colors.primary, fontWeight: 'bold' }]}>
+                    Mostrando clases del {new Date(state.selectedDate + 'T12:00:00').toLocaleDateString('es-ES', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
                   </Text>
                 </View>
+              ) : (
+                <View style={styles.calendarInfoRow}>
+                  <Ionicons name="bulb" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
+                  <Text style={[calendarStyles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
+                    Toca una fecha para ver las clases del día
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         ) : clasesFiltradas.length > 0 ? (
@@ -667,30 +701,16 @@ const ClaseDetalleScreen: React.FC = () => {
             <View style={styles.emptyContent}>
               <Ionicons name="fitness" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
               <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
-                No se encontraron clases
+                {state.selectedDate ? 'No hay clases programadas para este día' : 'No se encontraron clases'}
               </Text>
             </View>
             <Text style={[styles.emptySubtext, { color: theme.colors.onSurfaceVariant }]}>
-              Intenta ajustar los filtros de búsqueda
+              {state.selectedDate ? 'Intenta seleccionar otra fecha' : 'Intenta ajustar los filtros de búsqueda'}
             </Text>
           </View>
         )}
       </View>
 
-             {/* FAB para navegación y actualización */}
-       <FAB
-         icon="refresh"
-         onPress={loadData}
-         style={[
-           styles.fab, 
-           { 
-             backgroundColor: theme.colors.primary,
-             bottom: insets.bottom > 0 ? insets.bottom + 16 : 32 // Ajuste para Android
-           }
-         ]}
-         loading={state.isLoading}
-         label="Actualizar"
-       />
 
       {/* Snackbar */}
       <Snackbar
@@ -988,20 +1008,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.7,
   },
-     fab: {
-     position: 'absolute',
-     margin: 16,
-     right: 16,
-     borderRadius: 16,
-     elevation: 8, // Sombra para Android
-     shadowColor: '#000', // Sombra para iOS
-     shadowOffset: {
-       width: 0,
-       height: 4,
-     },
-     shadowOpacity: 0.3,
-     shadowRadius: 8,
-   },
   snackbar: {
     marginBottom: 16,
   },

@@ -2,15 +2,14 @@ import React, { createContext, ReactNode, useCallback, useContext, useEffect, us
 import NotificationService from '../services/notificationService';
 import { reservaService } from '../services/reservaService';
 import {
-  Clase,
-  ClaseCardData,
-  EstadoReserva,
-  ReservaCardData,
-  ReservaConClase
+    Clase,
+    ClaseCardData,
+    EstadoReserva,
+    ReservaCardData,
+    ReservaConClase
 } from '../types/reservas';
 import { useAuthStore } from './authStore';
 import { useNotificationConfig } from './NotificationConfigContext';
-import { authService } from '../services/authService';
 
 // Estado del contexto
 interface ReservasState {
@@ -27,6 +26,7 @@ interface ReservasState {
   // Filtros y UI
   searchTerm: string;
   selectedTipo: string | null;
+  selectedDate: string | null; // Nueva propiedad para fecha seleccionada
   
   // Error
   error: string | null;
@@ -43,6 +43,7 @@ type ReservasAction =
   | { type: 'SET_SELECTED_CLASE'; payload: ClaseCardData | null }
   | { type: 'SET_SEARCH_TERM'; payload: string }
   | { type: 'SET_SELECTED_TIPO'; payload: string | null }
+  | { type: 'SET_SELECTED_DATE'; payload: string | null } // Nueva acción para fecha seleccionada
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'CLEAR_ERROR' }
   | { type: 'ADD_RESERVA'; payload: ReservaConClase }
@@ -60,6 +61,7 @@ const initialState: ReservasState = {
   isCanceling: false,
   searchTerm: '',
   selectedTipo: null,
+  selectedDate: null, // Inicializar fecha seleccionada como null
   error: null,
   userTokens: 0, // Agregar estado para tokens del usuario
 };
@@ -113,6 +115,9 @@ const reservasReducer = (state: ReservasState, action: ReservasAction): Reservas
     
     case 'SET_SELECTED_TIPO':
       return { ...state, selectedTipo: action.payload };
+    
+    case 'SET_SELECTED_DATE':
+      return { ...state, selectedDate: action.payload };
     
     case 'SET_ERROR':
       return { ...state, error: action.payload };
@@ -239,6 +244,7 @@ export interface ReservasContextType {
   // Acciones de UI
   setSearchTerm: (term: string) => void;
   setSelectedTipo: (tipo: string | null) => void;
+  setSelectedDate: (fecha: string | null) => void;
   setSelectedClase: (clase: ClaseCardData | null) => void;
   clearError: () => void;
   
@@ -551,6 +557,10 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
     dispatch({ type: 'SET_SELECTED_TIPO', payload: tipo });
   }, []);
 
+  const setSelectedDate = useCallback((fecha: string | null) => {
+    dispatch({ type: 'SET_SELECTED_DATE', payload: fecha });
+  }, []);
+
   const setSelectedClase = useCallback((clase: ClaseCardData | null) => {
     dispatch({ type: 'SET_SELECTED_CLASE', payload: clase });
   }, []);
@@ -578,11 +588,37 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
       clasesFiltradas = clasesFiltradas.filter(clase => clase.tipo === state.selectedTipo);
     }
 
+    // Filtrar por fecha seleccionada
+    if (state.selectedDate) {
+      // Corregir problema de zona horaria: agregar 'T12:00:00' para evitar conversión a día anterior
+      const fechaSeleccionada = new Date(state.selectedDate + 'T12:00:00');
+      const diaSemanaSeleccionado = fechaSeleccionada.getDay();
+      const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+      const nombreDiaSeleccionado = diasSemana[diaSemanaSeleccionado];
+      
+      // Mapeo de días en diferentes formatos para asegurar compatibilidad
+      const mapeoDias: Record<string, string[]> = {
+        'lunes': ['lunes', 'LUNES', 'Lunes'],
+        'martes': ['martes', 'MARTES', 'Martes'],
+        'miércoles': ['miércoles', 'miercoles', 'MIÉRCOLES', 'MIERCOLES', 'Miércoles', 'Miercoles'],
+        'jueves': ['jueves', 'JUEVES', 'Jueves'],
+        'viernes': ['viernes', 'VIERNES', 'Viernes'],
+        'sábado': ['sábado', 'sabado', 'SÁBADO', 'SABADO', 'Sábado', 'Sabado'],
+        'domingo': ['domingo', 'DOMINGO', 'Domingo']
+      };
+      
+      const variacionesDia = mapeoDias[nombreDiaSeleccionado] || [nombreDiaSeleccionado];
+      
+      clasesFiltradas = clasesFiltradas.filter(clase =>
+        clase.dias.some(dia => variacionesDia.includes(dia))
+      );
+    }
+
     // Filtrar solo clases activas
     clasesFiltradas = clasesFiltradas.filter(clase => clase.activa);
 
     return clasesFiltradas;
-  }, [state.clases, state.searchTerm, state.selectedTipo]);
+  }, [state.clases, state.searchTerm, state.selectedTipo, state.selectedDate]);
 
   const getReservasActivas = useCallback((): ReservaCardData[] => {
     return state.reservas.filter(reserva => reserva.estado === 'ACTIVA');
@@ -600,6 +636,7 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
     cancelarReserva,
     setSearchTerm,
     setSelectedTipo,
+    setSelectedDate,
     setSelectedClase,
     clearError,
     getClasesFiltradas,
@@ -631,6 +668,7 @@ export const useReservas = (): ReservasContextType => {
       cancelarReserva: async () => false,
       setSearchTerm: () => {},
       setSelectedTipo: () => {},
+      setSelectedDate: () => {},
       setSelectedClase: () => {},
       clearError: () => {},
       getClasesFiltradas: () => [],
