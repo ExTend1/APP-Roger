@@ -22,8 +22,10 @@ const HomeScreen: React.FC = () => {
 
   // Array de imágenes para alternar aleatoriamente
   const coachImages = [
-    require('../../../assets/images/profe.webp'),
-    require('../../../assets/images/ezo.webp')
+    require('../../../assets/images/Evelin.png'),
+    require('../../../assets/images/ezo.webp'),
+    require('../../../assets/images/AlvaroBk.png'),
+    require('../../../assets/images/Valentina.png')
   ];
 
   // Estado para la imagen seleccionada aleatoriamente
