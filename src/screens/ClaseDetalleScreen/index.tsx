@@ -2,14 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, Image, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Calendar, DateData } from 'react-native-calendars';
 import {
   ActivityIndicator,
   Button,
   Searchbar,
   Snackbar,
   Text,
-  useTheme
+  useTheme,
+  Chip,
+  Menu,
+  Divider,
+  FAB
 } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import CustomHeader from '../../components/CustomHeader';
@@ -28,7 +31,12 @@ const ClaseDetalleScreen: React.FC = () => {
     cancelarReserva, 
     setSearchTerm, 
     setSelectedTipo,
-    setSelectedDate,
+    setSelectedProfesor,
+    setSelectedDia,
+    setSelectedHorario,
+    setMostrarFiltrosAvanzados,
+    limpiarFiltros,
+    obtenerOpcionesUnicas,
     getClasesFiltradas,
     isClaseReservada,
     fetchUserTokens
@@ -38,7 +46,6 @@ const ClaseDetalleScreen: React.FC = () => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarType, setSnackbarType] = useState<'success' | 'error'>('success');
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   const loadData = useCallback(async () => {
     console.log('[ClaseDetalleScreen] Cargando datos...');
@@ -55,89 +62,91 @@ const ClaseDetalleScreen: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  // Generar datos del calendario con colores distintivos
-  const generateCalendarData = () => {
-    const calendarData: any = {};
-    
-    state.clases.forEach(clase => {
-      clase.dias.forEach(dia => {
-        // Generar fechas para las próximas 4 semanas
-        for (let week = 0; week < 4; week++) {
-          const dateKey = getDateKeyFromDay(dia, week);
-          if (dateKey) {
-            // Solo agregar un punto por fecha, no por clase
-            if (!calendarData[dateKey]) {
-              // Verificar si hay alguna clase reservada para este día
-              const tieneClaseReservada = state.clases.some(c => 
-                c.dias.some(d => d.toLowerCase() === dia.toLowerCase()) && 
-                isClaseReservada(c.id)
-              );
-              
-              const color = tieneClaseReservada ? '#90EE90' : '#87CEEB'; // Verde si hay reservas, celeste si solo disponibles
-              
-              calendarData[dateKey] = {
-                dots: [{
-                  key: dateKey, // Usar la fecha como key en lugar del ID de clase
-                  color: color,
-                  selectedDotColor: color
-                }]
-              };
-            }
+  // Funciones para calcular proximidad de clases
+  const calcularProximaClase = (clase: ClaseCardData): string => {
+    const diasMap: { [key: string]: number } = {
+      'DOMINGO': 0, 'LUNES': 1, 'MARTES': 2, 'MIERCOLES': 3,
+      'JUEVES': 4, 'VIERNES': 5, 'SABADO': 6
+    };
+    const nombresDiasCompletos: { [key: number]: string } = {
+      0: 'Domingo', 1: 'Lunes', 2: 'Martes', 3: 'Miércoles',
+      4: 'Jueves', 5: 'Viernes', 6: 'Sábado'
+    };
+
+    const hoy = new Date();
+    const diaActual = hoy.getDay();
+    const horaActual = hoy.getHours() * 60 + hoy.getMinutes();
+
+    const [horas, minutos] = clase.horario.split(':').map(Number);
+    const horaClase = horas * 60 + minutos;
+
+    const diasClase = clase.dias.map(dia => diasMap[dia]).sort((a, b) => a - b);
+
+    for (let i = 0; i < 7; i++) {
+      const diaBuscar = (diaActual + i) % 7;
+      if (diasClase.includes(diaBuscar)) {
+        const fechaProxima = new Date(hoy);
+        fechaProxima.setDate(hoy.getDate() + i);
+
+        const nombreDia = nombresDiasCompletos[diaBuscar];
+        const diaMes = fechaProxima.getDate();
+        const mes = fechaProxima.getMonth() + 1;
+
+        if (i === 0 && horaClase > horaActual) {
+          const tiempoRestante = horaClase - horaActual;
+          const horasRestantes = Math.floor(tiempoRestante / 60);
+          const minutosRestantes = tiempoRestante % 60;
+          if (horasRestantes > 0) {
+            return `${nombreDia} ${diaMes}/${mes} - Hoy en ${horasRestantes}h ${minutosRestantes}m`;
+          } else {
+            return `${nombreDia} ${diaMes}/${mes} - Hoy en ${minutosRestantes}m`;
           }
         }
-      });
-    });
-    
-    return calendarData;
-  };
-
-  // Convertir día de la semana a fecha específica
-  const getDateKeyFromDay = (dia: string, weekOffset: number = 0): string | null => {
-    const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    
-    // Mapeo de días en mayúsculas a minúsculas para compatibilidad
-    const mapeoDias: Record<string, string> = {
-      'LUNES': 'lunes',
-      'MARTES': 'martes', 
-      'MIÉRCOLES': 'miércoles',
-      'MIERCOLES': 'miércoles',
-      'JUEVES': 'jueves',
-      'VIERNES': 'viernes',
-      'SÁBADO': 'sábado',
-      'SABADO': 'sábado',
-      'DOMINGO': 'domingo'
-    };
-    
-    const diaNormalizado = mapeoDias[dia] || dia.toLowerCase();
-    const diaIndex = diasSemana.indexOf(diaNormalizado);
-    
-    if (diaIndex === -1) return null;
-    
-    const today = new Date();
-    const currentDay = today.getDay();
-    const daysUntilTarget = (diaIndex - currentDay + 7) % 7;
-    
-    // Si es hoy, mostrar la próxima semana
-    const targetDays = daysUntilTarget === 0 ? 7 + (weekOffset * 7) : daysUntilTarget + (weekOffset * 7);
-    
-    const targetDate = new Date(today);
-    targetDate.setDate(today.getDate() + targetDays);
-    
-    return targetDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-  };
-
-  // Manejador para cuando se selecciona una fecha en el calendario
-  const handleDateSelect = (day: DateData) => {
-    const fechaSeleccionada = day.dateString;
-    
-    // Si ya está seleccionada la misma fecha, la deseleccionamos
-    if (state.selectedDate === fechaSeleccionada) {
-      setSelectedDate(null);
-    } else {
-      // Establecer la fecha seleccionada para filtrar las clases
-      setSelectedDate(fechaSeleccionada);
+        if (i > 0) {
+          return `${nombreDia} ${diaMes}/${mes}`;
+        }
+      }
     }
+    return 'Próximamente';
   };
+
+  const calcularDiasHastaProximaClase = (clase: ClaseCardData): number => {
+    const diasMap: { [key: string]: number } = {
+      'DOMINGO': 0, 'LUNES': 1, 'MARTES': 2, 'MIERCOLES': 3,
+      'JUEVES': 4, 'VIERNES': 5, 'SABADO': 6
+    };
+    const hoy = new Date();
+    const diaActual = hoy.getDay();
+    const horaActual = hoy.getHours() * 60 + hoy.getMinutes();
+    const [horas, minutos] = clase.horario.split(':').map(Number);
+    const horaClase = horas * 60 + minutos;
+    const diasClase = clase.dias.map(dia => diasMap[dia]).sort((a, b) => a - b);
+
+    for (let i = 0; i < 7; i++) {
+      const diaBuscar = (diaActual + i) % 7;
+      if (diasClase.includes(diaBuscar)) {
+        if (i === 0 && horaClase > horaActual) {
+          return 0;
+        }
+        if (i > 0) {
+          return i;
+        }
+      }
+    }
+    return 7;
+  };
+
+  const obtenerTextoProximidad = (dias: number): string => {
+    if (dias === 0) return 'Hoy';
+    if (dias === 1) return 'Mañana';
+    if (dias === 2) return 'En 2 días';
+    if (dias === 3) return 'En 3 días';
+    if (dias === 4) return 'En 4 días';
+    if (dias === 5) return 'En 5 días';
+    if (dias === 6) return 'En 6 días';
+    return 'Próximamente';
+  };
+
 
 
 
@@ -230,6 +239,11 @@ const ClaseDetalleScreen: React.FC = () => {
   const renderClaseCard = ({ item: clase }: { item: ClaseCardData }) => {
     const isReservada = isClaseReservada(clase.id);
     const colorTipo = getColorByTipo(clase.tipo);
+    
+    // Calcular proximidad
+    const diasHastaProximaClase = calcularDiasHastaProximaClase(clase);
+    const textoProximidad = obtenerTextoProximidad(diasHastaProximaClase);
+    const proximaClaseInfo = calcularProximaClase(clase);
     
     // Verificar si la clase tiene cupos disponibles usando la información real de la API
     const tieneCuposDisponibles = !clase.tieneCupoLimitado || 
@@ -326,23 +340,33 @@ const ClaseDetalleScreen: React.FC = () => {
          ]}>
             {/* Título y Badges en la misma línea */}
             <View style={styles.titleRow}>
-              <Text style={[
-                styles.claseTitle, 
-                { color: theme.dark ? 'white' : 'black' }
-              ]}>
-                {clase.nombre}
-              </Text>
+              <View style={styles.titleContainer}>
+                <Text style={[
+                  styles.claseTitle, 
+                  { color: theme.dark ? 'white' : 'black' }
+                ]}>
+                  {clase.nombre}
+                </Text>
+                {/* Badge de proximidad */}
+                <View style={[
+                  styles.badge, 
+                  {
+                    backgroundColor: diasHastaProximaClase === 0 ? '#4CAF50' :
+                      diasHastaProximaClase === 1 ? '#FF9800' :
+                      diasHastaProximaClase <= 3 ? '#2196F3' : '#9E9E9E'
+                  }
+                ]}>
+                  <Text style={styles.badgeText}>
+                    {textoProximidad}
+                  </Text>
+                </View>
+              </View>
 
-              {/* Badges a la derecha del título */}
+              {/* Badge del tipo de clase */}
               <View style={styles.titleBadgesContainer}>
                 <View style={[styles.badge, { backgroundColor: colorTipo }]}>
                   <Text style={styles.badgeText}>
                     {clase.tipo.charAt(0).toUpperCase() + clase.tipo.slice(1)}
-                  </Text>
-                </View>
-                <View style={[styles.badge, { backgroundColor: theme.dark ? '#FFAF2E' : '#E0E0E0' }]}>
-                  <Text style={[styles.badgeText, { color: theme.dark ? 'black' : 'rgba(0, 0, 0, 0.7)' }]}>
-                    Alta Intensidad
                   </Text>
                 </View>
               </View>
@@ -355,6 +379,22 @@ const ClaseDetalleScreen: React.FC = () => {
            ]}>
              {clase.descripcion}
            </Text>
+
+           {/* Información de próxima clase */}
+           <View style={styles.proximaClaseContainer}>
+             <Ionicons 
+               name="time-outline" 
+               size={16} 
+               color={theme.colors.primary} 
+               style={styles.proximaClaseIcon}
+             />
+             <Text style={[
+               styles.proximaClaseText,
+               { color: theme.colors.primary }
+             ]}>
+               Próxima clase: {proximaClaseInfo}
+             </Text>
+           </View>
 
           {/* Detalles */}
           <View style={styles.detailsContainer}>
@@ -502,100 +542,169 @@ const ClaseDetalleScreen: React.FC = () => {
 
         {/* Contenido principal */}
         <View style={styles.content}>
-        {/* Barra de búsqueda con selector de fecha integrado */}
-        <View style={[styles.searchContainer, calendarStyles.searchContainerDynamic]}>
+        {/* Barra de búsqueda */}
+        <View style={styles.searchContainer}>
           <Searchbar
             placeholder="Buscar clases..."
             onChangeText={setSearchTerm}
             value={state.searchTerm}
             style={styles.searchbar}
           />
-          
-          {/* Botón de fecha integrado que funciona como toggle */}
+        </View>
+
+
+
+        {/* Botón para mostrar filtros avanzados */}
+        <View style={styles.filtrosContainer}>
           <TouchableOpacity
             style={[
-              styles.dateSelectorButton,
-              { 
-                backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-                borderColor: theme.dark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'
-              },
-              viewMode === 'calendar' && {
-                backgroundColor: theme.colors.primary + '1A',
-                borderColor: theme.colors.primary
-              }
+              styles.filtrosAvanzadosButton,
+              { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }
             ]}
-            onPress={() => setViewMode(viewMode === 'list' ? 'calendar' : 'list')}
+            onPress={() => setMostrarFiltrosAvanzados(!state.mostrarFiltrosAvanzados)}
           >
-            <View style={styles.dateSelectorContent}>
-              <Ionicons 
-                name={viewMode === 'list' ? 'calendar' : 'list'} 
-                size={20} 
-                color={theme.dark ? '#FF6B6B' : '#E74C3C'} 
-                style={styles.dateSelectorIcon} 
-              />
-              <View style={styles.dateSelectorTextContainer}>
-              </View>
-            </View>
+            <Ionicons 
+              name={state.mostrarFiltrosAvanzados ? 'chevron-up' : 'chevron-down'} 
+              size={20} 
+              color={theme.colors.primary} 
+            />
+            <Text style={[styles.filtrosAvanzadosText, { color: theme.colors.primary }]}>
+              Filtros
+            </Text>
           </TouchableOpacity>
         </View>
 
+        {/* Filtros avanzados */}
+        {state.mostrarFiltrosAvanzados && (
+          <View style={styles.filtrosAvanzadosContainer}>
+            {/* Filtro por Tipo */}
+            <View style={styles.filtroAvanzadoGroup}>
+              <Text style={[styles.filtroAvanzadoLabel, { color: theme.colors.onSurfaceVariant }]}>
+                Tipo de Clase
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {tiposDisponibles.map((tipo) => (
+                  <Chip
+                    key={tipo.value}
+                    selected={state.selectedTipo === tipo.value || (tipo.value === 'todos' && !state.selectedTipo)}
+                    onPress={() => setSelectedTipo(tipo.value === 'todos' ? null : tipo.value)}
+                    style={[
+                      styles.filtroAvanzadoChip,
+                      (state.selectedTipo === tipo.value || (tipo.value === 'todos' && !state.selectedTipo)) && {
+                        backgroundColor: '#FFD700',
+                        borderColor: '#FFA500',
+                        borderWidth: 2
+                      }
+                    ]}
+                    textStyle={{ color: 'black' }}
+                    selectedColor="#FFD700"
+                    icon="check"
+                  >
+                    {tipo.label}
+                  </Chip>
+                ))}
+              </ScrollView>
+            </View>
 
+            {/* Filtro por Profesor */}
+            <View style={styles.filtroAvanzadoGroup}>
+              <Text style={[styles.filtroAvanzadoLabel, { color: theme.colors.onSurfaceVariant }]}>
+                Profesor
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {['todos', ...obtenerOpcionesUnicas().profesores].map((profesor) => (
+                  <Chip
+                    key={profesor}
+                    selected={state.selectedProfesor === profesor || (profesor === 'todos' && !state.selectedProfesor)}
+                    onPress={() => setSelectedProfesor(profesor === 'todos' ? null : profesor)}
+                    style={[
+                      styles.filtroAvanzadoChip,
+                      (state.selectedProfesor === profesor || (profesor === 'todos' && !state.selectedProfesor)) && {
+                        backgroundColor: '#FFD700',
+                        borderColor: '#FFA500',
+                        borderWidth: 2
+                      }
+                    ]}
+                    textStyle={{ color: 'black' }}
+                    selectedColor="#FFD700"
+                    icon="check"
+                  >
+                    {profesor === 'todos' ? 'Todos' : profesor}
+                  </Chip>
+                ))}
+              </ScrollView>
+            </View>
 
-        {/* Filtros por tipo y fecha */}
-        <View style={styles.filtrosContainer}>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filtrosContent}
-          >
-            {/* Botón para limpiar filtro de fecha */}
-            {state.selectedDate && (
-              <View
-                style={[
-                  styles.filtroCard,
-                  { backgroundColor: theme.colors.primary + '1A' }
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.filtroText,
-                    { color: theme.colors.primary, fontWeight: 'bold' }
-                  ]}
-                  onPress={() => setSelectedDate(null)}
-                >
-                  Limpiar fecha
-                </Text>
-              </View>
-            )}
+            {/* Filtro por Día */}
+            <View style={styles.filtroAvanzadoGroup}>
+              <Text style={[styles.filtroAvanzadoLabel, { color: theme.colors.onSurfaceVariant }]}>
+                Día
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {['todos', ...obtenerOpcionesUnicas().dias].map((dia) => (
+                  <Chip
+                    key={dia}
+                    selected={state.selectedDia === dia || (dia === 'todos' && !state.selectedDia)}
+                    onPress={() => setSelectedDia(dia === 'todos' ? null : dia)}
+                    style={[
+                      styles.filtroAvanzadoChip,
+                      (state.selectedDia === dia || (dia === 'todos' && !state.selectedDia)) && {
+                        backgroundColor: '#FFD700',
+                        borderColor: '#FFA500',
+                        borderWidth: 2
+                      }
+                    ]}
+                    textStyle={{ color: 'black' }}
+                    selectedColor="#FFD700"
+                    icon="check"
+                  >
+                    {dia === 'todos' ? 'Todos' : dia}
+                  </Chip>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Filtro por Horario */}
+            <View style={styles.filtroAvanzadoGroup}>
+              <Text style={[styles.filtroAvanzadoLabel, { color: theme.colors.onSurfaceVariant }]}>
+                Horario
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {['todos', ...obtenerOpcionesUnicas().horarios].map((horario) => (
+                  <Chip
+                    key={horario}
+                    selected={state.selectedHorario === horario || (horario === 'todos' && !state.selectedHorario)}
+                    onPress={() => setSelectedHorario(horario === 'todos' ? null : horario)}
+                    style={[
+                      styles.filtroAvanzadoChip,
+                      (state.selectedHorario === horario || (horario === 'todos' && !state.selectedHorario)) && {
+                        backgroundColor: '#FFD700',
+                        borderColor: '#FFA500',
+                        borderWidth: 2
+                      }
+                    ]}
+                    textStyle={{ color: 'black' }}
+                    selectedColor="#FFD700"
+                    icon="check"
+                  >
+                    {horario === 'todos' ? 'Todos' : horario}
+                  </Chip>
+                ))}
+              </ScrollView>
+            </View>
             
-            {tiposDisponibles.map((tipo) => (
-              <View
-                key={tipo.value}
-                style={[
-                  styles.filtroCard,
-                  { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' },
-                  state.selectedTipo === tipo.value && {
-                    backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'
-                  }
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.filtroText,
-                    { color: theme.dark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)' },
-                    state.selectedTipo === tipo.value && {
-                      color: theme.dark ? 'white' : 'black',
-                      fontWeight: 'bold'
-                    }
-                  ]}
-                  onPress={() => setSelectedTipo(tipo.value === 'todos' ? null : tipo.value)}
-                >
-                  {tipo.label}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
+            {/* Botón para limpiar filtros */}
+            <TouchableOpacity
+              style={[styles.limpiarFiltrosButton, { backgroundColor: theme.colors.errorContainer }]}
+              onPress={limpiarFiltros}
+            >
+              <Ionicons name="close-circle" size={16} color={theme.colors.error} />
+              <Text style={[styles.limpiarFiltrosText, { color: theme.colors.error }]}>
+                Limpiar Filtros
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
 
 
@@ -606,80 +715,6 @@ const ClaseDetalleScreen: React.FC = () => {
             <Text style={[styles.loadingText, { color: theme.colors.onSurfaceVariant }]}>
               Cargando clases...
             </Text>
-          </View>
-        ) : viewMode === 'calendar' ? (
-          // Vista de Calendario
-          <View style={calendarStyles.calendarContainer}>
-            <Calendar
-              markedDates={generateCalendarData()}
-              markingType="multi-dot"
-              onDayPress={handleDateSelect}
-              theme={{
-                backgroundColor: theme.colors.surface,
-                calendarBackground: theme.colors.surface,
-                textSectionTitleColor: theme.colors.onSurface,
-                selectedDayBackgroundColor: theme.colors.primary,
-                selectedDayTextColor: '#ffffff',
-                todayTextColor: theme.colors.primary,
-                dayTextColor: theme.colors.onSurface,
-                textDisabledColor: theme.colors.onSurfaceVariant,
-                dotColor: theme.colors.primary,
-                selectedDotColor: '#ffffff',
-                arrowColor: theme.colors.primary,
-                monthTextColor: theme.colors.onSurface,
-                indicatorColor: theme.colors.primary,
-                textDayFontWeight: '400',
-                textMonthFontWeight: 'bold',
-                textDayHeaderFontWeight: '600',
-                textDayFontSize: 16,
-                textMonthFontSize: 18,
-                textDayHeaderFontSize: 14
-              }}
-              style={calendarStyles.calendar}
-              enableSwipeMonths={true}
-              showWeekNumbers={false}
-              firstDay={1} // Lunes como primer día de la semana
-            />
-            
-            {/* Leyenda del calendario */}
-            <View style={calendarStyles.calendarLegend}>
-              <View style={calendarStyles.legendItem}>
-                <View style={[calendarStyles.legendDot, { backgroundColor: '#90EE90' }]} />
-                <Text style={[calendarStyles.legendText, { color: theme.colors.onSurfaceVariant }]}>
-                  Reservadas
-                </Text>
-              </View>
-              <View style={calendarStyles.legendItem}>
-                <View style={[calendarStyles.legendDot, { backgroundColor: '#87CEEB' }]} />
-                <Text style={[calendarStyles.legendText, { color: theme.colors.onSurfaceVariant }]}>
-                Disponibles
-                </Text>
-              </View>
-            </View>
-            
-            {/* Información adicional del calendario */}
-            <View style={calendarStyles.calendarInfo}>
-              {state.selectedDate ? (
-                <View style={styles.calendarInfoRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={theme.colors.primary} style={{ marginRight: 4 }} />
-                  <Text style={[calendarStyles.calendarInfoText, { color: theme.colors.primary, fontWeight: 'bold' }]}>
-                    Mostrando clases del {new Date(state.selectedDate + 'T12:00:00').toLocaleDateString('es-ES', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.calendarInfoRow}>
-                  <Ionicons name="bulb" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
-                  <Text style={[calendarStyles.calendarInfoText, { color: theme.colors.onSurfaceVariant }]}>
-                    Toca una fecha para ver las clases del día
-                  </Text>
-                </View>
-              )}
-            </View>
           </View>
         ) : clasesFiltradas.length > 0 ? (
           <FlatList
@@ -701,16 +736,31 @@ const ClaseDetalleScreen: React.FC = () => {
             <View style={styles.emptyContent}>
               <Ionicons name="fitness" size={16} color={theme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
               <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
-                {state.selectedDate ? 'No hay clases programadas para este día' : 'No se encontraron clases'}
+                No se encontraron clases
               </Text>
             </View>
             <Text style={[styles.emptySubtext, { color: theme.colors.onSurfaceVariant }]}>
-              {state.selectedDate ? 'Intenta seleccionar otra fecha' : 'Intenta ajustar los filtros de búsqueda'}
+              Intenta ajustar los filtros de búsqueda
             </Text>
           </View>
         )}
       </View>
 
+      {/* FAB para navegación y actualización */}
+      <FAB
+        icon="refresh"
+        onPress={loadData}
+        size="small"
+        style={[
+          styles.fab, 
+          { 
+            backgroundColor: theme.colors.primary,
+            bottom: insets.bottom > 0 ? insets.bottom + 16 : 32 // Ajuste para Android
+          }
+        ]}
+        loading={state.isLoading}
+        label="Actualizar"
+      />
 
       {/* Snackbar */}
       <Snackbar
@@ -1008,6 +1058,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.7,
   },
+  fab: {
+    position: 'absolute',
+    margin: 12,
+    right: 12,
+    borderRadius: 12,
+    elevation: 6, // Sombra para Android
+    shadowColor: '#000', // Sombra para iOS
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+  },
   snackbar: {
     marginBottom: 16,
   },
@@ -1057,6 +1121,79 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+  },
+
+  // Estilos para filtros avanzados
+  filtrosAvanzadosButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  filtrosAvanzadosText: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  filtrosAvanzadosContainer: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  filtroAvanzadoGroup: {
+    marginBottom: 16,
+  },
+  filtroAvanzadoLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  filtroAvanzadoChip: {
+    marginRight: 8,
+    marginBottom: 4,
+  },
+  limpiarFiltrosButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 8,
+    alignSelf: 'center',
+  },
+  limpiarFiltrosText: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+
+  // Estilos para proximidad
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  proximaClaseContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  proximaClaseIcon: {
+    marginRight: 6,
+  },
+  proximaClaseText: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
   },
 
 });

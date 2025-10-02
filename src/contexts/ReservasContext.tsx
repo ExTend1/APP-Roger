@@ -26,7 +26,10 @@ interface ReservasState {
   // Filtros y UI
   searchTerm: string;
   selectedTipo: string | null;
-  selectedDate: string | null; // Nueva propiedad para fecha seleccionada
+  selectedProfesor: string | null;
+  selectedDia: string | null;
+  selectedHorario: string | null;
+  mostrarFiltrosAvanzados: boolean;
   
   // Error
   error: string | null;
@@ -43,7 +46,10 @@ type ReservasAction =
   | { type: 'SET_SELECTED_CLASE'; payload: ClaseCardData | null }
   | { type: 'SET_SEARCH_TERM'; payload: string }
   | { type: 'SET_SELECTED_TIPO'; payload: string | null }
-  | { type: 'SET_SELECTED_DATE'; payload: string | null } // Nueva acción para fecha seleccionada
+  | { type: 'SET_SELECTED_PROFESOR'; payload: string | null }
+  | { type: 'SET_SELECTED_DIA'; payload: string | null }
+  | { type: 'SET_SELECTED_HORARIO'; payload: string | null }
+  | { type: 'SET_MOSTRAR_FILTROS_AVANZADOS'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'CLEAR_ERROR' }
   | { type: 'ADD_RESERVA'; payload: ReservaConClase }
@@ -64,6 +70,11 @@ const initialState: ReservasState = {
   selectedDate: null, // Inicializar fecha seleccionada como null
   error: null,
   userTokens: 0, // Agregar estado para tokens del usuario
+  // Nuevos filtros avanzados
+  selectedProfesor: null,
+  selectedDia: null,
+  selectedHorario: null,
+  mostrarFiltrosAvanzados: false,
 };
 
 // Reducer
@@ -116,8 +127,17 @@ const reservasReducer = (state: ReservasState, action: ReservasAction): Reservas
     case 'SET_SELECTED_TIPO':
       return { ...state, selectedTipo: action.payload };
     
-    case 'SET_SELECTED_DATE':
-      return { ...state, selectedDate: action.payload };
+    case 'SET_SELECTED_PROFESOR':
+      return { ...state, selectedProfesor: action.payload };
+    
+    case 'SET_SELECTED_DIA':
+      return { ...state, selectedDia: action.payload };
+    
+    case 'SET_SELECTED_HORARIO':
+      return { ...state, selectedHorario: action.payload };
+    
+    case 'SET_MOSTRAR_FILTROS_AVANZADOS':
+      return { ...state, mostrarFiltrosAvanzados: action.payload };
     
     case 'SET_ERROR':
       return { ...state, error: action.payload };
@@ -209,6 +229,91 @@ const getEstadoTexto = (estado: EstadoReserva): string => {
   }
 };
 
+// Funciones para calcular proximidad de clases
+const calcularProximaClase = (clase: ClaseCardData): string => {
+  const diasMap: { [key: string]: number } = {
+    'DOMINGO': 0, 'LUNES': 1, 'MARTES': 2, 'MIERCOLES': 3,
+    'JUEVES': 4, 'VIERNES': 5, 'SABADO': 6
+  };
+  const nombresDiasCompletos: { [key: number]: string } = {
+    0: 'Domingo', 1: 'Lunes', 2: 'Martes', 3: 'Miércoles',
+    4: 'Jueves', 5: 'Viernes', 6: 'Sábado'
+  };
+
+  const hoy = new Date();
+  const diaActual = hoy.getDay();
+  const horaActual = hoy.getHours() * 60 + hoy.getMinutes();
+
+  const [horas, minutos] = clase.horario.split(':').map(Number);
+  const horaClase = horas * 60 + minutos;
+
+  const diasClase = clase.dias.map(dia => diasMap[dia]).sort((a, b) => a - b);
+
+  for (let i = 0; i < 7; i++) {
+    const diaBuscar = (diaActual + i) % 7;
+    if (diasClase.includes(diaBuscar)) {
+      const fechaProxima = new Date(hoy);
+      fechaProxima.setDate(hoy.getDate() + i);
+
+      const nombreDia = nombresDiasCompletos[diaBuscar];
+      const diaMes = fechaProxima.getDate();
+      const mes = fechaProxima.getMonth() + 1;
+
+      if (i === 0 && horaClase > horaActual) {
+        const tiempoRestante = horaClase - horaActual;
+        const horasRestantes = Math.floor(tiempoRestante / 60);
+        const minutosRestantes = tiempoRestante % 60;
+        if (horasRestantes > 0) {
+          return `${nombreDia} ${diaMes}/${mes} - Hoy en ${horasRestantes}h ${minutosRestantes}m`;
+        } else {
+          return `${nombreDia} ${diaMes}/${mes} - Hoy en ${minutosRestantes}m`;
+        }
+      }
+      if (i > 0) {
+        return `${nombreDia} ${diaMes}/${mes}`;
+      }
+    }
+  }
+  return 'Próximamente';
+};
+
+const calcularDiasHastaProximaClase = (clase: ClaseCardData): number => {
+  const diasMap: { [key: string]: number } = {
+    'DOMINGO': 0, 'LUNES': 1, 'MARTES': 2, 'MIERCOLES': 3,
+    'JUEVES': 4, 'VIERNES': 5, 'SABADO': 6
+  };
+  const hoy = new Date();
+  const diaActual = hoy.getDay();
+  const horaActual = hoy.getHours() * 60 + hoy.getMinutes();
+  const [horas, minutos] = clase.horario.split(':').map(Number);
+  const horaClase = horas * 60 + minutos;
+  const diasClase = clase.dias.map(dia => diasMap[dia]).sort((a, b) => a - b);
+
+  for (let i = 0; i < 7; i++) {
+    const diaBuscar = (diaActual + i) % 7;
+    if (diasClase.includes(diaBuscar)) {
+      if (i === 0 && horaClase > horaActual) {
+        return 0;
+      }
+      if (i > 0) {
+        return i;
+      }
+    }
+  }
+  return 7;
+};
+
+const obtenerTextoProximidad = (dias: number): string => {
+  if (dias === 0) return 'Hoy';
+  if (dias === 1) return 'Mañana';
+  if (dias === 2) return 'En 2 días';
+  if (dias === 3) return 'En 3 días';
+  if (dias === 4) return 'En 4 días';
+  if (dias === 5) return 'En 5 días';
+  if (dias === 6) return 'En 6 días';
+  return 'Próximamente';
+};
+
 const getEstadoColor = (estado: EstadoReserva): string => {
   switch (estado) {
     case 'ACTIVA':
@@ -244,7 +349,12 @@ export interface ReservasContextType {
   // Acciones de UI
   setSearchTerm: (term: string) => void;
   setSelectedTipo: (tipo: string | null) => void;
-  setSelectedDate: (fecha: string | null) => void;
+  setSelectedProfesor: (profesor: string | null) => void;
+  setSelectedDia: (dia: string | null) => void;
+  setSelectedHorario: (horario: string | null) => void;
+  setMostrarFiltrosAvanzados: (mostrar: boolean) => void;
+  limpiarFiltros: () => void;
+  obtenerOpcionesUnicas: () => { tipos: string[]; profesores: string[]; dias: string[]; horarios: string[] };
   setSelectedClase: (clase: ClaseCardData | null) => void;
   clearError: () => void;
   
@@ -588,37 +698,35 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
       clasesFiltradas = clasesFiltradas.filter(clase => clase.tipo === state.selectedTipo);
     }
 
-    // Filtrar por fecha seleccionada
-    if (state.selectedDate) {
-      // Corregir problema de zona horaria: agregar 'T12:00:00' para evitar conversión a día anterior
-      const fechaSeleccionada = new Date(state.selectedDate + 'T12:00:00');
-      const diaSemanaSeleccionado = fechaSeleccionada.getDay();
-      const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-      const nombreDiaSeleccionado = diasSemana[diaSemanaSeleccionado];
-      
-      // Mapeo de días en diferentes formatos para asegurar compatibilidad
-      const mapeoDias: Record<string, string[]> = {
-        'lunes': ['lunes', 'LUNES', 'Lunes'],
-        'martes': ['martes', 'MARTES', 'Martes'],
-        'miércoles': ['miércoles', 'miercoles', 'MIÉRCOLES', 'MIERCOLES', 'Miércoles', 'Miercoles'],
-        'jueves': ['jueves', 'JUEVES', 'Jueves'],
-        'viernes': ['viernes', 'VIERNES', 'Viernes'],
-        'sábado': ['sábado', 'sabado', 'SÁBADO', 'SABADO', 'Sábado', 'Sabado'],
-        'domingo': ['domingo', 'DOMINGO', 'Domingo']
-      };
-      
-      const variacionesDia = mapeoDias[nombreDiaSeleccionado] || [nombreDiaSeleccionado];
-      
-      clasesFiltradas = clasesFiltradas.filter(clase =>
-        clase.dias.some(dia => variacionesDia.includes(dia))
+    // Filtrar por profesor
+    if (state.selectedProfesor && state.selectedProfesor !== 'todos') {
+      clasesFiltradas = clasesFiltradas.filter(clase => clase.profesor === state.selectedProfesor);
+    }
+
+    // Filtrar por día
+    if (state.selectedDia && state.selectedDia !== 'todos') {
+      clasesFiltradas = clasesFiltradas.filter(clase => 
+        clase.dias.some(dia => dia.toLowerCase().includes(state.selectedDia!.toLowerCase()))
       );
+    }
+
+    // Filtrar por horario
+    if (state.selectedHorario && state.selectedHorario !== 'todos') {
+      clasesFiltradas = clasesFiltradas.filter(clase => clase.horario.includes(state.selectedHorario!));
     }
 
     // Filtrar solo clases activas
     clasesFiltradas = clasesFiltradas.filter(clase => clase.activa);
 
+    // Ordenar por proximidad
+    clasesFiltradas = clasesFiltradas.sort((a, b) => {
+      const diasA = calcularDiasHastaProximaClase(a);
+      const diasB = calcularDiasHastaProximaClase(b);
+      return diasA - diasB;
+    });
+
     return clasesFiltradas;
-  }, [state.clases, state.searchTerm, state.selectedTipo, state.selectedDate]);
+  }, [state.clases, state.searchTerm, state.selectedTipo, state.selectedProfesor, state.selectedDia, state.selectedHorario]);
 
   const getReservasActivas = useCallback((): ReservaCardData[] => {
     return state.reservas.filter(reserva => reserva.estado === 'ACTIVA');
@@ -626,6 +734,40 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
 
   const isClaseReservada = useCallback((claseId: string): boolean => {
     return state.clases.find(clase => clase.id === claseId)?.isReservada || false;
+  }, [state.clases]);
+
+  // Nuevas funciones para filtros avanzados
+  const setSelectedProfesor = useCallback((profesor: string | null) => {
+    dispatch({ type: 'SET_SELECTED_PROFESOR', payload: profesor });
+  }, []);
+
+  const setSelectedDia = useCallback((dia: string | null) => {
+    dispatch({ type: 'SET_SELECTED_DIA', payload: dia });
+  }, []);
+
+  const setSelectedHorario = useCallback((horario: string | null) => {
+    dispatch({ type: 'SET_SELECTED_HORARIO', payload: horario });
+  }, []);
+
+  const setMostrarFiltrosAvanzados = useCallback((mostrar: boolean) => {
+    dispatch({ type: 'SET_MOSTRAR_FILTROS_AVANZADOS', payload: mostrar });
+  }, []);
+
+  const limpiarFiltros = useCallback(() => {
+    dispatch({ type: 'SET_SEARCH_TERM', payload: '' });
+    dispatch({ type: 'SET_SELECTED_TIPO', payload: null });
+    dispatch({ type: 'SET_SELECTED_PROFESOR', payload: null });
+    dispatch({ type: 'SET_SELECTED_DIA', payload: null });
+    dispatch({ type: 'SET_SELECTED_HORARIO', payload: null });
+  }, []);
+
+  const obtenerOpcionesUnicas = useCallback(() => {
+    const tipos = [...new Set(state.clases.map(clase => clase.tipo))];
+    const profesores = [...new Set(state.clases.map(clase => clase.profesor))];
+    const dias = [...new Set(state.clases.flatMap(clase => clase.dias))];
+    const horarios = [...new Set(state.clases.map(clase => clase.horario))];
+    
+    return { tipos, profesores, dias, horarios };
   }, [state.clases]);
 
   const value: ReservasContextType = {
@@ -636,7 +778,12 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
     cancelarReserva,
     setSearchTerm,
     setSelectedTipo,
-    setSelectedDate,
+    setSelectedProfesor,
+    setSelectedDia,
+    setSelectedHorario,
+    setMostrarFiltrosAvanzados,
+    limpiarFiltros,
+    obtenerOpcionesUnicas,
     setSelectedClase,
     clearError,
     getClasesFiltradas,
@@ -668,7 +815,12 @@ export const useReservas = (): ReservasContextType => {
       cancelarReserva: async () => false,
       setSearchTerm: () => {},
       setSelectedTipo: () => {},
-      setSelectedDate: () => {},
+      setSelectedProfesor: () => {},
+      setSelectedDia: () => {},
+      setSelectedHorario: () => {},
+      setMostrarFiltrosAvanzados: () => {},
+      limpiarFiltros: () => {},
+      obtenerOpcionesUnicas: () => ({ tipos: [], profesores: [], dias: [], horarios: [] }),
       setSelectedClase: () => {},
       clearError: () => {},
       getClasesFiltradas: () => [],
