@@ -67,7 +67,6 @@ const initialState: ReservasState = {
   isCanceling: false,
   searchTerm: '',
   selectedTipo: null,
-  selectedDate: null, // Inicializar fecha seleccionada como null
   error: null,
   userTokens: 0, // Agregar estado para tokens del usuario
   // Nuevos filtros avanzados
@@ -665,10 +664,6 @@ export const ReservasProvider: React.FC<ReservasProviderProps> = ({ children }) 
 
   const setSelectedTipo = useCallback((tipo: string | null) => {
     dispatch({ type: 'SET_SELECTED_TIPO', payload: tipo });
-  }, []);
-
-  const setSelectedDate = useCallback((fecha: string | null) => {
-    dispatch({ type: 'SET_SELECTED_DATE', payload: fecha });
   }, []);
 
   const setSelectedClase = useCallback((clase: ClaseCardData | null) => {
