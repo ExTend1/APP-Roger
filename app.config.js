@@ -2,7 +2,7 @@
 export default {
   name: "RogerAPP",
   slug: "RogerAPP",
-  version: "1.0.6",
+  version: "1.0.7",
   orientation: "portrait",
   icon: "./assets/images/RogerAPP.png",
   scheme: "rogerAPP",
@@ -27,7 +27,7 @@ export default {
   ios: {
     supportsTablet: true,
     bundleIdentifier: "com.roger.gym",
-  buildNumber: "6",
+  buildNumber: "7",
     infoPlist: {
       NSUserNotificationUsageDescription:
         "Esta app necesita acceso a las notificaciones...",
